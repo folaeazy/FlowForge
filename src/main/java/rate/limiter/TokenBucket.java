@@ -47,33 +47,64 @@ public class TokenBucket {
      * Attempt to consume N number of tokens
      *
      */
-    private boolean tryAcquire(int requiredTokens) {
+    public boolean tryAcquire(int requiredTokens) {
         if(requiredTokens <= 0 )
             throw new IllegalArgumentException("tokens must be positive");
 
         while (true) {
             State current = state.get();
-            long now = System.currentTimeMillis();
-            long elapsedTime = now - current.lastRefillTime;
+
 
             // Tokens to add (refill logic)
-            double tokensToAdd = (elapsedTime * tokensPerSecond) / 1000.0; // converted to seconds
-            double newToken = Math.min(capacity, current.tokens + tokensToAdd);
+            State refreshed = refill(current);
 
-            if(newToken < requiredTokens)
+            if(refreshed.tokens < requiredTokens)
                 return false;
 
             // deduct required token
-            double remainder = newToken - requiredTokens;
+            double remainder = refreshed.tokens - requiredTokens;
 
             //updated state
-            State updated = new State(remainder, now);
+            State updated = new State(remainder, refreshed.lastRefillTime);
 
             //CAS attempt
             if(state.compareAndSet(current, updated))
                 return true;
 
         }
+
+    }
+
+    /**
+     * Get available token updated with time
+     * Using CAS Loop for state consistency
+     */
+    public double availableTokens() {
+        while (true) {
+            State current = state.get();
+            State refreshed = refill(current);
+
+            if(state.compareAndSet(current, refreshed))
+                return refreshed.tokens;
+        }
+
+    }
+
+    private State refill(State current) {
+        long now = System.currentTimeMillis();
+        long elapsedTime = now - current.lastRefillTime;
+
+        if(elapsedTime <= 0)
+            return current;
+
+        double tokensToAdd = (elapsedTime * tokensPerSecond) / 1000.0; // converted to seconds
+
+        if(tokensToAdd <= 0)
+            return current;
+
+        double newToken = Math.min(capacity, current.tokens + tokensToAdd); // cap at maximum
+
+        return new State(newToken, now);
 
 
 
