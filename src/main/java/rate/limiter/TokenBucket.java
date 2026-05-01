@@ -1,107 +1,81 @@
 package rate.limiter;
 
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Thread safe token bucket implementation using CAS Loops
- * Lazy refill - tokens are added on demand not on schedule
- *
+ * Thread safe token bucket implementation with CAS loop
+ * Lazy refill - refill on demand not on schedule
  */
 public class TokenBucket {
-    private static final long PRECISION_FACTOR = 1_000L;
 
-    private final long capacityScaled;
-    private final long refillRatePerNano;
+    private final AtomicReference<State> state;
+    private final double capacity;
+    private final double tokensPerSecond;
 
-    private final AtomicLong tokenScaled;
-    private volatile long lastRefillNanos;
+    /**
+     * Using state for atomic updates
+     * Update both token and refill time at the same time
+     */
+    private static class State {
+        final double tokens;
+        final long lastRefillTime;
 
-    public TokenBucket(long capacityTokens, long tokensPerSecond ) {
-        if(capacityTokens <= 0 || tokensPerSecond <= 0) {
-            throw new IllegalArgumentException("capacity and rate must be positive");
+        State(double tokens, long lastRefillTime) {
+            this.tokens = tokens;
+            this.lastRefillTime = lastRefillTime;
         }
+    }
 
-        this.capacityScaled = capacityTokens * PRECISION_FACTOR;
-        this.refillRatePerNano = (tokensPerSecond * PRECISION_FACTOR) / 1_000_000_000L;
-        this.tokenScaled = new AtomicLong(capacityScaled); // start full
-        this.lastRefillNanos = System.nanoTime();
+    public TokenBucket(double capacity, double tokensPerSecond) {
+        if(capacity <= 0 || tokensPerSecond <= 0)
+            throw new IllegalArgumentException("capacity or tokens must be positive");
+
+        this.capacity = capacity;
+        this.tokensPerSecond = tokensPerSecond;
+        long now = System.currentTimeMillis();
+        this.state = new AtomicReference<>(new State(capacity, now));
     }
 
     /**
-     * Attempt to consume one token
-     *
-     * @return true if acquired and false if rate limit exceed
+     * Attempt to consume 1 token
      */
     public boolean tryAcquire() {
         return tryAcquire(1);
     }
 
     /**
+     * Attempt to consume N number of tokens
      *
-     * Attempt to consume N tokens atomically
-     * using CAS loop - retry without blocking
      */
+    private boolean tryAcquire(int requiredTokens) {
+        if(requiredTokens <= 0 )
+            throw new IllegalArgumentException("tokens must be positive");
 
-    public boolean tryAcquire(int tokens) {
-        if(tokens <= 0)
-            throw new IllegalArgumentException("Token count must be positive");
-
-        refill();
-
-        long required = (long) tokens * PRECISION_FACTOR;
         while (true) {
-            long current = tokenScaled.get();
+            State current = state.get();
+            long now = System.currentTimeMillis();
+            long elapsedTime = now - current.lastRefillTime;
 
-            if(current < required)
-                return  false; // not enough token - reject
+            // Tokens to add (refill logic)
+            double tokensToAdd = (elapsedTime * tokensPerSecond) / 1000.0; // converted to seconds
+            double newToken = Math.min(capacity, current.tokens + tokensToAdd);
 
-            if(tokenScaled.compareAndSet(current, current - required))
+            if(newToken < requiredTokens)
+                return false;
+
+            // deduct required token
+            double remainder = newToken - requiredTokens;
+
+            //updated state
+            State updated = new State(remainder, now);
+
+            //CAS attempt
+            if(state.compareAndSet(current, updated))
                 return true;
 
         }
 
 
-    }
-
-    private  void refill() {
-        long now = System.nanoTime();
-        long last = lastRefillNanos;
-        long elapsedNanos = now - last;
-
-        System.out.println("Elapsed nanos is  " + elapsedNanos);
-
-        if(elapsedNanos <= 0) return;
-
-        long tokensToAdd = elapsedNanos * refillRatePerNano;
-        System.out.println("Token to add is  " + tokensToAdd + " " +  refillRatePerNano);
-        if(tokensToAdd <= 0) return; // not enough time lapses
-
-        // updated by only one thread
-        if(!updateLastRefillTime(last, now)) return;
-
-        tokenScaled.updateAndGet(current ->
-                Math.min(capacityScaled, current + tokensToAdd));
-
-    }
-
-    private boolean updateLastRefillTime(long expected, long updated) {
-
-        synchronized (this) {
-            if (lastRefillNanos != expected) return false;
-            lastRefillNanos = updated;
-            return true;
-        }
-    }
-
-    public long availableTokens() {
-        refill();
-        return tokenScaled.get() / PRECISION_FACTOR;
-    }
-
-    public static void main(String[] args) {
-
-        TokenBucket bucket =  new TokenBucket(10,10);
-        bucket.refill();
 
     }
 
