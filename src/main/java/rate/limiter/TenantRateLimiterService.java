@@ -9,11 +9,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TenantRateLimiterService {
 
     private final ConcurrentHashMap<String, TokenBucket> tenantBuckets;
-    private final double defaultCapacity;
-    private final double defaultTokenPerSecond;
+    private final long defaultCapacity;
+    private final long defaultTokenPerSecond;
 
 
-    public TenantRateLimiterService(double defaultCapacity, double defaultTokenPerSecond) {
+    public TenantRateLimiterService(long defaultCapacity, long defaultTokenPerSecond) {
         this.defaultCapacity = defaultCapacity;
         this.defaultTokenPerSecond = defaultTokenPerSecond;
         this.tenantBuckets = new ConcurrentHashMap<>();
@@ -35,7 +35,7 @@ public class TenantRateLimiterService {
      * Create a custom rate limit for a tenant
      * Thread safe - With an atomic update of the tenant bucket
      */
-    public void registerTenant(String tenantId, double capacity, double ratePerSecond) {
+    public void registerTenant(String tenantId, long capacity, long ratePerSecond) {
         tenantBuckets.compute(
                 tenantId, (id, existing) ->
                         new TokenBucket(capacity, ratePerSecond)
