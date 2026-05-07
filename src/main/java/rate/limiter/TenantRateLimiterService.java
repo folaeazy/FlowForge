@@ -44,6 +44,21 @@ public class TenantRateLimiterService {
     }
 
 
+    /**
+     * Active tenant count
+     */
+    public int activeTenantCount() {
+        return tenantBuckets.size();
+    }
+
+    public long availableTokens(String tenantId) {
+        TokenBucket bucket = tenantBuckets.get(tenantId);
+
+        return bucket.availableTokens();
+    }
+
+
+
 
 
 }
