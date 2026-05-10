@@ -36,10 +36,10 @@ public class TokenBucket {
         this.capacityScaled = capacity * SCALE;
         this.ratePerNano = (tokensPerSecond * SCALE) / 1_000_000_000L; // converted to nanoseconds;
 
-        if (this.ratePerNano <= 0)
-            throw new IllegalArgumentException(
-                    "Rate too low for nanosecond precision. Minimum: 1 token/sec with SCALE=" + SCALE
-            );
+//        if (this.ratePerNano <= 0)
+//            throw new IllegalArgumentException(
+//                    "Rate too low for nanosecond precision. Minimum: 1 token/sec with SCALE=" + SCALE
+//            );
         long now = System.nanoTime();
         this.state = new AtomicReference<>(new State(capacityScaled, now));
     }
@@ -119,11 +119,6 @@ public class TokenBucket {
 
     }
 
-    public static void main(String[] a)  {
-        var bucket = new TokenBucket(100, 1000);
-        System.out.println(bucket.availableTokens());
 
-
-    }
 
 }
