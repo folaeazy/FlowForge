@@ -18,7 +18,7 @@ public class Main {
         }
 
         for (int i = 1; i <= 20; i++) { // 20 jobs
-            service.submit(new Job("Job-" + i, "tenantA"));
+            service.submit(new Job("Job-" + i, "tenantA", 3));
         }
     }
 }
