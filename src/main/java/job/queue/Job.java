@@ -25,6 +25,10 @@ public class Job {
         retryCount++;
     }
 
+    public long nextDelayMillis() {
+        return (long) Math.pow(2, retryCount) * 500;
+    }
+
 
 
 }
