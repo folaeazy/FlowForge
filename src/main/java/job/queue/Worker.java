@@ -1,9 +1,6 @@
 package job.queue;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * Job Consumer or Subscriber
@@ -12,6 +9,7 @@ public class Worker implements Runnable{
 
     private final BlockingQueue<Job> queue;
     private final String name;
+    private final BlockingQueue<Job> deadLetterQueue = new LinkedBlockingDeque<>();
 
     ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
@@ -30,12 +28,16 @@ public class Worker implements Runnable{
             try {
 
                 Job job = queue.take();
-                System.out.println(name + " processing " + job.id);
+                System.out.println(
+                        name + " processing " + job.id +
+                                " | instance=" + System.identityHashCode(job)
+                );
                 Thread.sleep(200); // simulate real work
 
                 boolean success = process(job);
                 if(success) {
                     System.out.println(name + " DONE " + job.id);
+                    job.completed = true;
                 }else {
                     System.out.println(name + " FAILED " + job.id);
 
@@ -47,26 +49,33 @@ public class Worker implements Runnable{
                         System.out.println(name + " RETRYING " + job.id + " in " + delay + "ms" +
                                 " (attempt " + job.retryCount + ")");
                         scheduler.schedule(() -> {
+                            if(job.completed) {
+                                System.out.println("Skipping retry job " + job.id + " already completed");
+                                return;
+                            }
                             System.out.println("Re-enqueueing " + job.id);
                             queue.offer(job);
                         }, delay, TimeUnit.MILLISECONDS);
-                        if (!queue.offer(job)) {
-                            System.out.println("Retry dropped (queue full): " + job.id);
-                        }
 
                     } else {
-                    System.out.println(name + " DROPPED " + job.id +
+                    System.out.println(name + " moving to DLQ " + job.id +
                             " (max retries reached)");
+                    deadLetterQueue.offer(job);
                    }
                 }
-
-
-
 
             }catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
         }
 
+
+    }
+
+    public void printDLQ() {
+        System.out.println("---- DLQ CONTENT ----");
+        deadLetterQueue.forEach(job ->
+                System.out.println(job.id + " (retries: " + job.retryCount + ")")
+        );
     }
 }

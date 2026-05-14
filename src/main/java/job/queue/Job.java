@@ -9,6 +9,7 @@ public class Job {
     String tenantId;
     int maxRetries;
     int retryCount;
+    volatile boolean completed = false;
 
     public Job(String id, String tenantId, int maxRetries) {
         this.id = id;
