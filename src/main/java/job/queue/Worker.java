@@ -1,5 +1,6 @@
 package job.queue;
 
+import java.util.Set;
 import java.util.concurrent.*;
 
 /**
@@ -10,6 +11,7 @@ public class Worker implements Runnable{
     private final BlockingQueue<Job> queue;
     private final String name;
     private final BlockingQueue<Job> deadLetterQueue = new LinkedBlockingDeque<>();
+    private final Set<String> completedJobs = ConcurrentHashMap.newKeySet();
 
     ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
@@ -28,6 +30,10 @@ public class Worker implements Runnable{
             try {
 
                 Job job = queue.take();
+                if(completedJobs.contains(job.id)) {
+                    System.out.println("Duplicate skipped: " + job.id);
+                    continue;
+                }
                 System.out.println(
                         name + " processing " + job.id +
                                 " | instance=" + System.identityHashCode(job)
@@ -38,6 +44,7 @@ public class Worker implements Runnable{
                 if(success) {
                     System.out.println(name + " DONE " + job.id);
                     job.completed = true;
+                    completedJobs.add(job.id);
                 }else {
                     System.out.println(name + " FAILED " + job.id);
 
