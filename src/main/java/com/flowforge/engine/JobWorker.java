@@ -1,4 +1,6 @@
-package job.queue;
+package com.flowforge.engine;
+
+import com.flowforge.core.domain.Job;
 
 import java.util.Set;
 import java.util.concurrent.*;
@@ -6,7 +8,7 @@ import java.util.concurrent.*;
 /**
  * Job Consumer or Subscriber
  */
-public class Worker implements Runnable{
+public class JobWorker implements Runnable{
 
     private final BlockingQueue<Job> queue;
     private final String name;
@@ -15,7 +17,7 @@ public class Worker implements Runnable{
 
     ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
-    public Worker(BlockingQueue<Job> queue, String name) {
+    public JobWorker(BlockingQueue<Job> queue, String name) {
         this.queue = queue;
         this.name = name;
     }

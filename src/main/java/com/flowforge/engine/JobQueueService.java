@@ -1,5 +1,6 @@
-package job.queue;
+package com.flowforge.engine;
 
+import com.flowforge.core.domain.Job;
 import rate.limiter.TenantRateLimiterService;
 
 import java.util.concurrent.BlockingQueue;

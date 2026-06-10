@@ -1,4 +1,4 @@
-package job.queue;
+package com.flowforge.core.domain;
 
 /**
  * Job To be done with job id and tenant id

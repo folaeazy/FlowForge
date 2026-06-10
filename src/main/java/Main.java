@@ -1,6 +1,6 @@
-import job.queue.Job;
-import job.queue.JobQueueService;
-import job.queue.Worker;
+import com.flowforge.core.domain.Job;
+import com.flowforge.engine.JobQueueService;
+import com.flowforge.engine.JobWorker;
 import rate.limiter.TenantRateLimiterService;
 
 import java.util.concurrent.Executors;
@@ -14,7 +14,7 @@ public class Main {
         var executor = Executors.newFixedThreadPool(3); // worker thread
 
         for (int i = 1; i <= 3; i++) {
-            executor.submit(new Worker(service.getQueue(), "Worker " + i));
+            executor.submit(new JobWorker(service.getQueue(), "Worker " + i));
         }
 
         for (int i = 1; i <= 20; i++) { // 20 jobs
