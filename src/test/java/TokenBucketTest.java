@@ -1,7 +1,7 @@
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import rate.limiter.TokenBucket;
+import com.flowforge.core.domain.TokenBucket;
 
 
 import java.util.concurrent.*;

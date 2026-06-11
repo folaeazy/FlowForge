@@ -1,5 +1,7 @@
 package rate.limiter;
 
+import com.flowforge.core.domain.TokenBucket;
+
 import java.util.concurrent.ConcurrentHashMap;
 
 /**

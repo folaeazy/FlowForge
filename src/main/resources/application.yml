@@ -1,0 +1,42 @@
+# application.yml  (active in local dev — not in Docker)
+spring:
+  application:
+    name: flowforge
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}    # 'localhost' if env var not set
+      port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 2
+          max-wait: 1000ms
+
+server:
+  port: ${SERVER_PORT:8080}
+
+flowforge:
+  workers:
+    pool-size: ${WORKER_POOL_SIZE:4}
+  queue:
+    capacity: ${JOB_QUEUE_CAPACITY:1000}
+  dlq:
+    max-size: ${DLQ_MAX_SIZE:500}
+  rate-limiter:
+    default-capacity: ${RATE_LIMITER_DEFAULT_CAPACITY:100}
+    default-rate-per-second: ${RATE_LIMITER_DEFAULT_RATE_PER_SECOND:50}
+  retry:
+    base-delay-ms: ${RETRY_BASE_DELAY_MS:1000}
+    max-delay-ms: ${RETRY_MAX_DELAY_MS:30000}
+
+---
+# Docker profile — Redis hostname is the service name, not localhost
+spring:
+  config:
+    activate:
+      on-profile: docker
+  data:
+    redis:
+      host: redis

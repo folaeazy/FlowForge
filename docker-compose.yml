@@ -1,0 +1,51 @@
+# docker-compose.yml
+version: '3.9'
+
+services:
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: flowforge-redis
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      # Named volume = data survives `docker-compose down` (but not `make clean`)
+      - redis_data:/data
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    # appendonly yes    → write-ahead log, survives Redis restart
+    # appendfsync every → flush to disk every second (balance of safety vs speed)
+    # maxmemory-policy  → when full, evict least recently used keys (safe for caches)
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      # App container will NOT start until this passes
+
+  flowforge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flowforge-app
+    ports:
+      - "${SERVER_PORT}:8080"
+    env_file:
+      - .env
+    environment:
+      # These override .env values inside the container
+      - SPRING_DATA_REDIS_HOST=${REDIS_HOST}
+      - SPRING_DATA_REDIS_PORT=${REDIS_PORT}
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+    depends_on:
+      redis:
+        condition: service_healthy  # waits for Redis ping, not just container start
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+    driver: local
