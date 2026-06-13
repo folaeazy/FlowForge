@@ -1,5 +1,7 @@
 # application.yml  (active in local dev — not in Docker)
 spring:
+  thread :
+    virtual : true
   application:
     name: flowforge
   data:
