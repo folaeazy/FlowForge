@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
-import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -47,9 +46,9 @@ public class RedisRateLimiter implements RateLimiter {
     private final long defaultCapacity ;
     private final long defaultRatePerSeconds;
 
-    private record TenantConfig(long capacity, long ratePerSec) {};
+    private record Tenant(long capacity, long ratePerSec) {};
 
-    private final ConcurrentHashMap<String, TenantConfig> tenantConfig = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Tenant> tenantConfig = new ConcurrentHashMap<>();
 
     // Track consecutive redis failure
     //In a production system this feeds a metric:
@@ -73,9 +72,9 @@ public class RedisRateLimiter implements RateLimiter {
 
     @Override
     public RateLimitResult tryAcquire(String tenantId) {
-        TenantConfig config = tenantConfig.getOrDefault(
+        Tenant config = tenantConfig.getOrDefault(
                 tenantId,
-                new TenantConfig(defaultCapacity, defaultRatePerSeconds)
+                new Tenant(defaultCapacity, defaultRatePerSeconds)
         );
 
         try{
@@ -129,12 +128,33 @@ public class RedisRateLimiter implements RateLimiter {
 
     @Override
     public void registerTenant(String tenantId, long capacity, long ratePerSecond) {
+        tenantConfig.put(tenantId, new Tenant(capacity, ratePerSecond));
+        log.info("[RateLimiter] Registered tenant={} capacity={} rate={}/sec",
+                tenantId, capacity, ratePerSecond);
 
     }
 
     @Override
     public long availableTokens(String tenantId) {
-        return 0;
+        try {
+            Object stored = redisTemplate.opsForHash()
+                    .get(RedisKeys.rateLimitKey(tenantId), "tokens");
+
+            if(stored == null) {
+                //Tenant exist in config but hasn't made any request yet
+                // bucket is conceptually full
+                return tenantConfig.getOrDefault(
+                        tenantId,
+                        new Tenant(defaultCapacity, defaultRatePerSeconds)
+                ).capacity();
+            }
+
+            return Long.parseLong(stored.toString()) / SCALE;
+
+        } catch (Exception e) {
+            log.error("[RateLimiter] Could not read available tokens tenant={}", tenantId, e);
+            return 0L;
+        }
     }
 
     private RateLimitResult failOpen(String tenantId, String reason) {
