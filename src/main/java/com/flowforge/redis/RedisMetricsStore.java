@@ -4,6 +4,7 @@ import com.flowforge.core.ports.MetricsStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 
@@ -18,6 +19,7 @@ import java.time.Duration;
  *       Separate STRING keys would require one GET per tenant.
  *       Dashboard loads all tenants in a single Redis round-trip.
  */
+@Component
 public class RedisMetricsStore implements MetricsStore {
 
     private static final Logger log = LoggerFactory.getLogger(RedisMetricsStore.class);
