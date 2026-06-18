@@ -102,16 +102,19 @@ public class RedisRateLimiterTest extends BaseRedisIntegrationTest {
             service.submit(() -> {
                 try {
                     barrier.await();
+                    for (int j = 0; j < requestPerThread; j++) {
+                        if(redisRateLimiter.tryAcquire("tenant-D").allowed()){
+                            allowed.incrementAndGet();
+                        }
+                    }
                 } catch (InterruptedException | BrokenBarrierException e) {
                     Thread.currentThread().interrupt();
-                    return;
+
+                }finally {
+                    latch.countDown();
                 }
-                for (int j = 0; j < requestPerThread; j++) {
-                    if(redisRateLimiter.tryAcquire("tenant-D").allowed()){
-                        allowed.incrementAndGet();
-                    }
-                }
-                latch.countDown();
+
+
             });
         }
         latch.await(10,TimeUnit.SECONDS);
