@@ -2,6 +2,7 @@ package com.flowforge.engine;
 
 import com.flowforge.core.ports.MetricsStore;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -32,5 +33,14 @@ public class FakeMetricsStore implements MetricsStore {
     }
     public long getRetried(String t)   {
         return retried.getOrDefault(t, new AtomicLong()).get();
+    }
+
+    public List<TpsDataPoint> getTpsRange(int lastNMinutes) {
+        return List.of();
+    }
+
+    @Override
+    public long getQueueSize() {
+        return 0;
     }
 }

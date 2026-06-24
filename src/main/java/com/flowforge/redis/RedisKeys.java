@@ -40,6 +40,8 @@ public final class RedisKeys {
     public static String idempotencyKey(String jobId) {
         return PREFIX + "idempotency:" + jobId;
     }
+    public static final String PREFIX_TPS_SUCCESS = PREFIX + "tps:success:";
+    public static final String PREFIX_TPS_FAILED  = PREFIX + "tps:failed:";
    // ─────Metrics  ──────────────────────────────────────────────────────────
 
     public static final String METRICS_PROCESSED = PREFIX + "metrics:processed";
@@ -57,8 +59,8 @@ public final class RedisKeys {
      * e.g., "flowforge:tps:success:202501151437"
      */
     public static String tpsBucket(String type) {
-        return PREFIX + "tps:" + type + ":" +
-                LocalDateTime.now().format(MINUTE_BUCKET);
+        String prefix = type.equals("success") ? PREFIX_TPS_SUCCESS : PREFIX_TPS_FAILED;
+        return prefix + LocalDateTime.now().format(MINUTE_BUCKET);
     }
 
     // Prevent instantiation — this is a utility class

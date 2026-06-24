@@ -7,6 +7,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *   HASH — for per-tenant counters:
@@ -76,9 +80,53 @@ public class RedisMetricsStore implements MetricsStore {
         return safeRead(RedisKeys.METRICS_RETRIES, tenantId);
     }
 
+    @Override
+    public long getQueueSize() {
+        try {
+            String raw = redisTemplate.opsForValue().get(RedisKeys.QUEUE_SIZE);
+            return raw == null ? 0L : Long.parseLong(raw);
+        } catch (Exception e) {
+            log.error("[Metrics] Failed to read queue size", e);
+            return 0L;
+        }
+    }
+
+    @Override
+    public List<TpsDataPoint> getTpsRange(int lastNMinutes) {
+        List<TpsDataPoint> points = new ArrayList<>();
+        DateTimeFormatter bucketFormat = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
+        DateTimeFormatter labelFormat  = DateTimeFormatter.ofPattern("HH:mm");
+        LocalDateTime now = LocalDateTime.now();
+
+        //from oldest to newest so the chart renders left-to-right correctly
+        for(int i = lastNMinutes; i>= 0; i--) {
+            LocalDateTime bucketTime = now.minusMinutes(i);
+            String bucketSuffix = bucketTime.format(bucketFormat);
+
+            try {
+                String successKey = RedisKeys.PREFIX_TPS_SUCCESS + bucketSuffix;
+                String failedKey  = RedisKeys.PREFIX_TPS_FAILED + bucketSuffix;
+
+                // MGET in one round trip rather than two separate GETs per minute —
+                // for lastNMinutes=60 that's 1 call instead of 120
+                List<String> values = redisTemplate.opsForValue().multiGet(List.of(successKey, failedKey));
+                long success = parseOrZero(values != null ? values.get(0) : null);
+                long failed  = parseOrZero(values != null ? values.get(1) : null);
+                points.add(new TpsDataPoint(bucketTime.format(labelFormat), success, failed));
+            } catch (Exception e) {
+                log.error("[Metrics] Failed to read TPS bucket for {}", bucketSuffix, e);
+                points.add(new TpsDataPoint(bucketTime.format(labelFormat), 0, 0));
+            }
+        }
+        return points;
+    }
+
 
     //======================private helpers=========================//
 
+    private long parseOrZero(String value) {
+        return value == null ? 0L : Long.parseLong(value);
+    }
 
     /**
      * HINCRBY — atomically increments a hash field.
