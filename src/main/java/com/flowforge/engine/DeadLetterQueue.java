@@ -70,4 +70,18 @@ public class DeadLetterQueue {
         return size.get();
     }
 
+    /**
+     * Removes a job from the DLQ by ID. Used after a manual retry succeeds,
+     * so the entry doesn't sit in the table looking unretried after the
+     * dashboard's "Retry" action actually worked.
+     */
+    public boolean remove(String jobId) {
+        boolean removed = queue.removeIf(job -> job.getJobId().equals(jobId));
+        if(removed) {
+            size.decrementAndGet();
+            log.info("[DLQ] Removed JobId={}", jobId);
+        }
+        return removed;
+    }
+
 }

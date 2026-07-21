@@ -1,6 +1,7 @@
 package com.flowforge.redis;
 
 
+import com.flowforge.api.dto.Tenant;
 import com.flowforge.core.domain.RateLimitResult;
 import com.flowforge.core.ports.RateLimiter;
 import org.slf4j.Logger;
@@ -46,7 +47,6 @@ public class RedisRateLimiter implements RateLimiter {
     private final long defaultCapacity ;
     private final long defaultRatePerSeconds;
 
-    private record Tenant(long capacity, long ratePerSec) {};
 
     private final ConcurrentHashMap<String, Tenant> tenantConfig = new ConcurrentHashMap<>();
 
@@ -81,8 +81,8 @@ public class RedisRateLimiter implements RateLimiter {
             Long result = redisTemplate.execute(
                     rateLimitScript,
                     List.of(RedisKeys.rateLimitKey(tenantId)),
-                    String.valueOf(config.capacity),
-                    String.valueOf(config.ratePerSec),
+                    String.valueOf(config.capacity()),
+                    String.valueOf(config.ratePerSec()),
                     String.valueOf(System.currentTimeMillis()),
                     "1",
                     String.valueOf(SCALE)
@@ -155,6 +155,14 @@ public class RedisRateLimiter implements RateLimiter {
             log.error("[RateLimiter] Could not read available tokens tenant={}", tenantId, e);
             return 0L;
         }
+    }
+
+    @Override
+    public Tenant getTenantConfig(String tenantId) {
+
+        return  tenantConfig.getOrDefault(
+                tenantId, new Tenant(defaultCapacity, defaultRatePerSeconds));
+
     }
 
     private RateLimitResult failOpen(String tenantId, String reason) {

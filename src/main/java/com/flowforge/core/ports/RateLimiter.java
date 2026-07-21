@@ -1,6 +1,7 @@
 package com.flowforge.core.ports;
 
 
+import com.flowforge.api.dto.Tenant;
 import com.flowforge.core.domain.RateLimitResult;
 
 /**
@@ -25,4 +26,11 @@ public interface RateLimiter {
      * Used by the dashboard for rate limit bar visualization.
      */
     long availableTokens(String tenantId);
+
+    /**
+     * Returns this tenant's configured limits. Falls back to system
+     */
+    Tenant getTenantConfig(String tenantId);
+
+
 }
