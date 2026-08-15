@@ -47,6 +47,14 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Source: https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-restclient -->
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.boot</groupId>-->
+<!--            <artifactId>spring-boot-restclient</artifactId>-->
+<!--            <version>4.1.0</version>-->
+<!--            <scope>compile</scope>-->
+<!--        </dependency>-->
+
         <!-- Wiremock for mocking FlowForge API in tests -->
         <dependency>
             <groupId>com.github.tomakehurst</groupId>

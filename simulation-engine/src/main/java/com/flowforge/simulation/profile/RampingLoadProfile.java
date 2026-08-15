@@ -16,10 +16,10 @@ public class RampingLoadProfile implements LoadProfile{
     private final int maxRate;
     private final Duration duration;
 
-    public RampingLoadProfile(int minRate, int maxRate, Duration duration) {
+    public RampingLoadProfile(int minRate, int maxRate, int duration) {
         this.minRate = minRate;
         this.maxRate = maxRate;
-        this.duration = duration;
+        this.duration = Duration.ofSeconds(duration);
     }
 
     @Override

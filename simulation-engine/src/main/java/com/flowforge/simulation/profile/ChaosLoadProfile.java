@@ -20,10 +20,10 @@ public class ChaosLoadProfile implements LoadProfile{
     private final Duration duration;
     private final double failureRate;
 
-    public ChaosLoadProfile(int meanRate, int jitterAmount, Duration duration, double failureRate) {
+    public ChaosLoadProfile(int meanRate, int jitterAmount, int duration, double failureRate) {
         this.meanRate = meanRate;
         this.jitterAmount = jitterAmount;
-        this.duration = duration;
+        this.duration = Duration.ofSeconds(duration);
         this.failureRate = failureRate;
     }
 

@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: flowforge-simulation-engine
+
+logging:
+  level:
+    root: INFO
+    com.flowforge: DEBUG
+
+flowforge:
+  base-url: http://localhost:8080

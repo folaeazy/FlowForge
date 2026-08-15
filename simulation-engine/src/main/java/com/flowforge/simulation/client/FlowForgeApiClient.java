@@ -2,13 +2,16 @@ package com.flowforge.simulation.client;
 
 
 
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.BufferingClientHttpRequestFactory;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.boot.web.client.RestTemplateBuilder;
+
 
 import java.util.Map;
 
@@ -26,12 +29,21 @@ public class FlowForgeApiClient {
     private final RestTemplate restTemplate;
     private final String baseUrl;
 
-    public FlowForgeApiClient(RestTemplateBuilder builder, SimulationProperties props) {
-        this.restTemplate = builder
-                .connectTimeout(java.time.Duration.ofSeconds(5))
-                .readTimeout(java.time.Duration.ofSeconds(10))
-                .build();
+    public FlowForgeApiClient(SimulationProperties props) {
+        this.restTemplate = createRestTemplate();
         this.baseUrl = props.getFlowforgeBaseUrl();
+    }
+
+
+    /**
+     * Create a RestTemplate with reasonable timeouts for HTTP calls.
+     */
+    private RestTemplate createRestTemplate() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(java.time.Duration.ofSeconds(5));
+        factory.setReadTimeout(java.time.Duration.ofSeconds(10));
+        return new RestTemplate(new BufferingClientHttpRequestFactory(factory));
+
     }
 
     /**

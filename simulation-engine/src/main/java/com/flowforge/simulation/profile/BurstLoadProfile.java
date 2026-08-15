@@ -22,12 +22,12 @@ public class BurstLoadProfile implements LoadProfile{
     private final int burstDurationSeconds;
     private final Duration totalDuration;
 
-    public BurstLoadProfile(int baselineRate, int peakRate, int baselineDurationSeconds, int burstDurationSeconds, Duration totalDuration) {
+    public BurstLoadProfile(int baselineRate, int peakRate, int baselineDurationSeconds, int burstDurationSeconds, int totalDuration) {
         this.baselineRate = baselineRate;
         this.peakRate = peakRate;
         this.baselineDurationSeconds = baselineDurationSeconds;
         this.burstDurationSeconds = burstDurationSeconds;
-        this.totalDuration = totalDuration;
+        this.totalDuration = Duration.ofSeconds(totalDuration);
     }
 
 

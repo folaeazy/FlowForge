@@ -13,9 +13,9 @@ public class SteadyLoadProfile implements LoadProfile{
     private final int jobsPerSecond;
     private final Duration duration;
 
-    public SteadyLoadProfile(int jobsPerSecond, Duration duration) {
+    public SteadyLoadProfile(int jobsPerSecond, int duration) {
         this.jobsPerSecond = jobsPerSecond;
-        this.duration = duration;
+        this.duration = Duration.ofSeconds(duration);
     }
 
     @Override
