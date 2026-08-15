@@ -72,9 +72,19 @@ test:
 build:
 	./mvnw clean package -DskipTests -q
 	@echo "JAR built → target/$(APP_NAME)-*.jar"
+## Run Simulation engine in steady profile mode
+simulate-steady:
+	cd simulation-engine && ./mvnw spring-boot:run -Dspring-boot.run.arguments="steady 100 60"
 
+## Run Simulation engine in burst profile mode
+simulate-burst:
+	cd simulation-engine && ./mvnw spring-boot:run -Dspring-boot.run.arguments="burst 20 300 30 15 120"
+
+
+## Run Simulation engine in chaos profile mode
+simulate-chaos:
+	cd simulation-engine && ./mvnw spring-boot:run -Dspring-boot.run.arguments="chaos 75 30 180 0.15"
 # ── Help ──────────────────────────────────────────────────────────
-
 ## Print available commands
 help:
 	@echo ""
