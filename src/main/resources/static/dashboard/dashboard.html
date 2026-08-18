@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FlowForge Dashboard | Distributed System Active</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=JetBrains+Mono:wght@100..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            background-color: #09090b;
+            color: #e1e2ec;
+            font-family: 'Geist', sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        .glass-card {
+            background: rgba(24, 24, 27, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+        }
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(24, 24, 27, 0.9);
+        }
+        .status-glow-emerald { box-shadow: 0 0 8px rgba(78, 222, 163, 0.3); }
+        .status-glow-error { box-shadow: 0 0 8px rgba(255, 180, 171, 0.3); }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #32353c; border-radius: 10px; }
+
+        .log-line:nth-child(odd) { background: rgba(255, 255, 255, 0.02); }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-error": "#690005",
+                      "secondary-container": "#00a572",
+                      "primary-container": "#4d8eff",
+                      "inverse-primary": "#005ac2",
+                      "surface-container-lowest": "#0b0e15",
+                      "surface-tint": "#adc6ff",
+                      "secondary-fixed": "#6ffbbe",
+                      "surface": "#10131a",
+                      "secondary-fixed-dim": "#4edea3",
+                      "on-surface": "#e1e2ec",
+                      "on-surface-variant": "#c2c6d6",
+                      "surface-container": "#1d2027",
+                      "secondary": "#4edea3",
+                      "on-primary-container": "#00285d",
+                      "on-tertiary-fixed-variant": "#723600",
+                      "on-primary-fixed": "#001a42",
+                      "on-background": "#e1e2ec",
+                      "tertiary-fixed-dim": "#ffb786",
+                      "on-tertiary-container": "#461f00",
+                      "tertiary-container": "#df7412",
+                      "primary-fixed": "#d8e2ff",
+                      "inverse-surface": "#e1e2ec",
+                      "on-secondary-container": "#00311f",
+                      "surface-container-low": "#191b23",
+                      "tertiary-fixed": "#ffdcc6",
+                      "on-secondary-fixed-variant": "#005236",
+                      "on-tertiary-fixed": "#311400",
+                      "surface-container-high": "#272a31",
+                      "on-error-container": "#ffdad6",
+                      "inverse-on-surface": "#2e3038",
+                      "background": "#10131a",
+                      "on-tertiary": "#502400",
+                      "primary": "#adc6ff",
+                      "outline": "#8c909f",
+                      "outline-variant": "#424754",
+                      "surface-bright": "#363941",
+                      "on-primary": "#002e6a",
+                      "tertiary": "#ffb786",
+                      "surface-variant": "#32353c",
+                      "primary-fixed-dim": "#adc6ff",
+                      "surface-container-highest": "#32353c",
+                      "on-secondary": "#003824",
+                      "error-container": "#93000a",
+                      "on-secondary-fixed": "#002113",
+                      "error": "#ffb4ab",
+                      "surface-dim": "#10131a",
+                      "on-primary-fixed-variant": "#004395"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "md": "16px",
+                      "lg": "24px",
+                      "gutter": "16px",
+                      "xs": "4px",
+                      "unit": "4px",
+                      "sm": "8px",
+                      "xl": "48px",
+                      "margin": "24px"
+              },
+              "fontFamily": {
+                      "headline-sm": ["Geist"],
+                      "headline-md": ["Geist"],
+                      "body-md": ["Geist"],
+                      "display-lg": ["Geist"],
+                      "headline-md-mobile": ["Geist"],
+                      "body-sm": ["Geist"],
+                      "mono-label": ["JetBrains Mono"]
+              },
+              "fontSize": {
+                      "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "700"}],
+                      "headline-md-mobile": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "body-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                      "mono-label": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}]
+              }
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface">
+<!-- TopNavBar Execution -->
+<header class="flex justify-between items-center w-full px-6 h-16 sticky top-0 z-50 bg-surface-container/80 backdrop-blur-xl border-b border-outline-variant/30">
+<div class="flex items-center gap-md">
+<img alt="FlowForge Logo" class="h-8 w-8" src="data:image/png;base64,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"/>
+<span class="font-headline-md text-headline-md font-bold text-primary">FlowForge</span>
+<div class="ml-xl hidden md:flex items-center gap-sm bg-surface-container-high px-sm py-xs rounded-lg border border-outline-variant/50">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">account_tree</span>
+<span class="font-body-md text-body-md text-on-surface">Default Cluster</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]">expand_more</span>
+</div>
+</div>
+<div class="flex items-center gap-lg">
+<div class="flex items-center gap-xs px-sm py-xs rounded-full bg-secondary/10 border border-secondary/20">
+<div class="h-2 w-2 rounded-full bg-secondary status-glow-emerald animate-pulse"></div>
+<span class="font-mono-label text-mono-label text-secondary uppercase">System Healthy</span>
+</div>
+<div class="flex items-center gap-md border-l border-outline-variant/30 pl-lg">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">settings_suggest</button>
+<div class="h-8 w-8 rounded-full overflow-hidden border border-outline-variant/50">
+<img alt="User profile avatar" class="h-full w-full object-cover" data-alt="A professional headshot of a software engineer with glasses, looking forward with a neutral expression. The image is a stylized avatar with a minimalist background, consistent with a high-tech developer dashboard interface, using deep navy and gray tones." src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg"/>
+</div>
+</div>
+</div>
+</header>
+<div class="flex min-h-[calc(100vh-64px)]">
+<!-- SideNavBar Execution -->
+<aside class="flex flex-col h-[calc(100vh-64px)] py-md px-sm sticky left-0 top-16 bg-surface border-r border-outline-variant/30 w-64 shrink-0 hidden md:flex">
+<div class="mb-lg px-sm">
+<div class="font-headline-sm text-headline-sm font-black text-on-surface">FlowForge Node</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Distributed System Active</div>
+</div>
+<nav class="flex-1 space-y-1">
+<!-- Dashboard Active -->
+<a class="flex items-center gap-md px-sm py-md text-secondary font-bold bg-secondary/10 border-r-2 border-secondary transition-all font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                    Dashboard
+                </a>
+<a class="flex items-center gap-md px-sm py-md text-on-surface-variant hover:bg-white/5 transition-all font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="work">work</span>
+                    Jobs
+                </a>
+<a class="flex items-center gap-md px-sm py-md text-on-surface-variant hover:bg-white/5 transition-all font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="business">business</span>
+                    Tenants
+                </a>
+<a class="flex items-center gap-md px-sm py-md text-on-surface-variant hover:bg-white/5 transition-all font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="error">error</span>
+                    Failed Jobs
+                </a>
+<a class="flex items-center gap-md px-sm py-md text-on-surface-variant hover:bg-white/5 transition-all font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+                    Metrics
+                </a>
+<a class="flex items-center gap-md px-sm py-md text-on-surface-variant hover:bg-white/5 transition-all font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+                    Settings
+                </a>
+</nav>
+<button class="mt-md w-full bg-primary text-on-primary py-sm rounded-lg font-headline-sm text-headline-sm hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined">add</span>
+                Deploy New Job
+            </button>
+<div class="mt-xl space-y-1 pt-md border-t border-outline-variant/20">
+<a class="flex items-center gap-md px-sm py-sm text-on-surface-variant hover:bg-white/5 transition-all font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+                    Documentation
+                </a>
+<a class="flex items-center gap-md px-sm py-sm text-on-surface-variant hover:bg-white/5 transition-all font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+                    Help
+                </a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 p-lg overflow-y-auto space-y-lg">
+<!-- Section 1: KPI Cards -->
+<div class="grid grid-cols-1 md:grid-cols-5 gap-md">
+<!-- Jobs Processed -->
+<div class="glass-card p-md rounded-xl">
+<div class="flex justify-between items-start mb-sm">
+<span class="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-wider">Jobs Processed</span>
+<span class="material-symbols-outlined text-primary text-[20px]">sync</span>
+</div>
+<div class="font-headline-md text-headline-md text-on-surface" id="metric-processed">0</div>
+<div class="flex items-center gap-xs text-secondary font-mono-label text-mono-label mt-xs">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+                        <span id="metric-processed-pct">—</span>
+</div>
+</div>
+<!-- Failed Jobs -->
+<div class="glass-card p-md rounded-xl">
+<div class="flex justify-between items-start mb-sm">
+<span class="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-wider">Failed Jobs</span>
+<span class="material-symbols-outlined text-error text-[20px]">warning</span>
+</div>
+<div class="font-headline-md text-headline-md text-on-surface" id="metric-failed">0</div>
+<div class="flex items-center gap-xs text-secondary font-mono-label text-mono-label mt-xs">
+<span class="material-symbols-outlined text-[14px]">trending_down</span>
+                        <span id="metric-failed-pct">—</span>
+</div>
+</div>
+<!-- Retry Count -->
+<div class="glass-card p-md rounded-xl">
+<div class="flex justify-between items-start mb-sm">
+<span class="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-wider">Retry Count</span>
+<span class="material-symbols-outlined text-tertiary text-[20px]">refresh</span>
+</div>
+<div class="font-headline-md text-headline-md text-on-surface" id="metric-retried">0</div>
+<div class="flex items-center gap-xs text-error font-mono-label text-mono-label mt-xs">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+                        <span id="metric-retried-pct">—</span>
+</div>
+</div>
+<!-- Queue Size -->
+<div class="glass-card p-md rounded-xl">
+<div class="flex justify-between items-start mb-sm">
+<span class="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-wider">Queue Size</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">reorder</span>
+</div>
+<div class="font-headline-md text-headline-md text-on-surface" id="metric-queue">0</div>
+<div class="flex items-center gap-xs text-error font-mono-label text-mono-label mt-xs">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+                        <span id="metric-queue-pct">—</span>
+</div>
+</div>
+<!-- Active Workers -->
+<div class="glass-card p-md rounded-xl">
+<div class="flex justify-between items-start mb-sm">
+<span class="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-wider">Active Workers</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">memory</span>
+</div>
+<div class="font-headline-md text-headline-md text-on-surface" id="metric-workers">4</div>
+<div class="flex items-center gap-xs text-on-surface-variant font-mono-label text-mono-label mt-xs">
+<span class="material-symbols-outlined text-[14px]">remove</span>
+                        Stable <span class="text-on-surface-variant/60 ml-xs">at capacity</span>
+</div>
+</div>
+</div>
+<!-- Section 2: Throughput and Activity -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-lg">
+<!-- Left: Job Throughput Chart -->
+<div class="lg:col-span-2 glass-card rounded-xl p-lg">
+<div class="flex justify-between items-center mb-lg">
+<h3 class="font-headline-sm text-headline-sm">Job Throughput (TPS)</h3>
+<div class="flex gap-sm">
+<span class="flex items-center gap-xs font-mono-label text-mono-label text-secondary">
+<span class="h-2 w-2 rounded-full bg-secondary"></span> Success
+                            </span>
+<span class="flex items-center gap-xs font-mono-label text-mono-label text-error">
+<span class="h-2 w-2 rounded-full bg-error"></span> Failed
+                            </span>
+</div>
+</div>
+<div style="height: 250px;">
+<canvas id="throughput-chart"></canvas>
+</div>
+</div>
+<!-- Right: Real-Time Activity Feed -->
+<div class="glass-card rounded-xl flex flex-col h-[350px]">
+<div class="p-md border-b border-outline-variant/30 flex justify-between items-center bg-surface-container/50">
+<h3 class="font-headline-sm text-headline-sm">Activity Feed</h3>
+<span class="font-mono-label text-mono-label text-on-surface-variant px-xs rounded bg-surface">LIVE</span>
+</div>
+<div class="flex-1 overflow-y-auto p-sm font-mono-label text-mono-label bg-black/40" id="activity-feed">
+<div class="p-1 text-on-surface-variant text-center">Connecting to activity feed...</div>
+</div>
+</div>
+</div>
+<!-- Section 3: Rate Limits and DLQ Table -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-lg">
+<!-- Left: Rate Limit Usage -->
+<div class="glass-card rounded-xl p-lg">
+<h3 class="font-headline-sm text-headline-sm mb-lg">Tenant Rate Limit Usage</h3>
+<div class="space-y-md" id="rate-limits-container">
+<div class="text-on-surface-variant text-body-sm">Loading rate limits...</div>
+</div>
+</div>
+<!-- Right: Failed Jobs Table -->
+<div class="glass-card rounded-xl flex flex-col">
+<div class="p-md border-b border-outline-variant/30">
+<h3 class="font-headline-sm text-headline-sm">Failed Jobs (DLQ)</h3>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left font-body-sm text-body-sm">
+<thead class="bg-surface-container-high border-b border-outline-variant/30 text-on-surface-variant uppercase">
+<tr>
+<th class="px-md py-sm">Job ID</th>
+<th class="px-md py-sm">Tenant</th>
+<th class="px-md py-sm">Retries</th>
+<th class="px-md py-sm">Status</th>
+<th class="px-md py-sm text-right">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20" id="dlq-table-body">
+<tr>
+<td colspan="5" class="px-md py-sm text-center text-on-surface-variant">Loading DLQ entries...</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Mobile Navigation Shell -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-surface-container border-t border-outline-variant/30 flex justify-around py-sm z-50">
+<a class="flex flex-col items-center text-secondary" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-[10px]">Home</span>
+</a>
+<a class="flex flex-col items-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">work</span>
+<span class="text-[10px]">Jobs</span>
+</a>
+<a class="flex flex-col items-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">insights</span>
+<span class="text-[10px]">Metrics</span>
+</a>
+<a class="flex flex-col items-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[10px]">Settings</span>
+</a>
+</nav>
+<script>
+const API_BASE = 'http://localhost:8080';
+const TENANT_ID = 'tenant-A';
+let activityFeedWs = null;
+
+// === INITIALIZATION ===
+document.addEventListener('DOMContentLoaded', async () => {
+    initializeActivityFeed();
+    await loadMetrics();
+    await loadThroughput();
+    await loadRateLimits();
+    await loadDLQ();
+    
+    // Refresh metrics every 5 seconds
+    setInterval(loadMetrics, 5000);
+    setInterval(loadThroughput, 10000);
+    setInterval(loadRateLimits, 8000);
+    setInterval(loadDLQ, 8000);
+});
+
+// === METRICS ===
+async function loadMetrics() {
+    try {
+        const response = await fetch(`${API_BASE}/api/metrics`);
+        const data = await response.json();
+        
+        document.getElementById('metric-processed').textContent = formatNumber(data.processed);
+        document.getElementById('metric-failed').textContent = formatNumber(data.failed);
+        document.getElementById('metric-retried').textContent = formatNumber(data.retried);
+        document.getElementById('metric-queue').textContent = formatNumber(data.queueSize);
+    } catch (error) {
+        console.error('Failed to load metrics:', error);
+    }
+}
+
+// === THROUGHPUT CHART ===
+let throughputChart = null;
+
+async function loadThroughput() {
+    try {
+        const response = await fetch(`${API_BASE}/api/metrics/throughput?minutes=30`);
+        const data = await response.json();
+        
+        if (!throughputChart) {
+            const ctx = document.getElementById('throughput-chart').getContext('2d');
+            throughputChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.points.map(p => p.minuteLabel),
+                    datasets: [
+                        {
+                            label: 'Success',
+                            data: data.points.map(p => p.success),
+                            backgroundColor: 'rgba(78, 222, 163, 0.7)',
+                            borderColor: '#4edea3',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Failed',
+                            data: data.points.map(p => p.failed),
+                            backgroundColor: 'rgba(255, 180, 171, 0.7)',
+                            borderColor: '#ffb4ab',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: false,
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#c2c6d6', font: { family: "'JetBrains Mono'" } }
+                        },
+                        y: {
+                            stacked: false,
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#c2c6d6' }
+                        }
+                    }
+                }
+            });
+        } else {
+            throughputChart.data.labels = data.points.map(p => p.minuteLabel);
+            throughputChart.data.datasets[0].data = data.points.map(p => p.success);
+            throughputChart.data.datasets[1].data = data.points.map(p => p.failed);
+            throughputChart.update('none');
+        }
+    } catch (error) {
+        console.error('Failed to load throughput:', error);
+    }
+}
+
+// === RATE LIMITS ===
+async function loadRateLimits() {
+    try {
+        const tenants = ['tenant-A', 'tenant-B', 'tenant-C', 'tenant-D', 'tenant-E'];
+        const container = document.getElementById('rate-limits-container');
+        container.innerHTML = '';
+        
+        for (const tenant of tenants) {
+            try {
+                const response = await fetch(`${API_BASE}/api/tenants/${tenant}/limit`);
+                const data = await response.json();
+                
+                const html = `
+                    <div class="space-y-xs">
+                        <div class="flex justify-between font-mono-label text-mono-label uppercase">
+                            <span>${tenant.toUpperCase()}</span>
+                            <span>${Math.round(data.usagePercent)}%</span>
+                        </div>
+                        <div class="h-2 w-full bg-surface-variant rounded-full overflow-hidden">
+                            <div class="h-full bg-primary-container transition-all duration-300" style="width: ${data.usagePercent}%"></div>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            } catch (e) {
+                console.error(\`Failed to load rate limit for \${tenant}:\`, e);
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load rate limits:', error);
+    }
+}
+
+// === DLQ TABLE ===
+async function loadDLQ() {
+    try {
+        const response = await fetch(`${API_BASE}/api/dlq`);
+        const jobs = await response.json();
+        
+        const tbody = document.getElementById('dlq-table-body');
+        if (!jobs || jobs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="px-md py-sm text-center text-on-surface-variant">No dead letter queue entries</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = jobs.map(job => \`
+            <tr class="hover:bg-white/5 transition-colors">
+                <td class="px-md py-sm font-mono-label">#\${job.jobId.substring(0, 8)}</td>
+                <td class="px-md py-sm">\${job.tenantId}</td>
+                <td class="px-md py-sm">\${job.attemptCount}/\${job.maxRetries}</td>
+                <td class="px-md py-sm">
+                    <span class="px-sm py-xs bg-error/10 text-error rounded text-[10px] uppercase font-bold">\${job.status}</span>
+                </td>
+                <td class="px-md py-sm text-right space-x-sm">
+                    <button class="text-primary hover:underline" onclick="retryDLQJob('\${job.jobId}')">Retry</button>
+                    <button class="text-on-surface-variant hover:text-on-surface" onclick="inspectDLQJob('\${job.jobId}')">Inspect</button>
+                </td>
+            </tr>
+        \`).join('');
+    } catch (error) {
+        console.error('Failed to load DLQ:', error);
+    }
+}
+
+// === ACTIVITY FEED (WebSocket) ===
+function initializeActivityFeed() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = \`\${protocol}//localhost:8080/ws/activity-feed/\${TENANT_ID}\`;
+    activityFeedWs = new WebSocket(wsUrl);
+    
+    activityFeedWs.onopen = () => {
+        console.log('Connected to activity feed');
+        document.getElementById('activity-feed').innerHTML = '';
+    };
+    
+    activityFeedWs.onmessage = (event) => {
+        const dto = JSON.parse(event.data);
+        const feed = document.getElementById('activity-feed');
+        
+        const time = new Date(dto.timestamp).toLocaleTimeString('en-US', { hour12: false });
+        const statusColor = getStatusColor(dto.type);
+        
+        const line = document.createElement('div');
+        line.className = 'log-line p-1 text-on-surface-variant opacity-0 transition-opacity duration-300';
+        line.innerHTML = \`<span class="text-secondary">[\${time}]</span> \${dto.subject} → <span class="\${statusColor}">\${dto.type}</span> Job-\${dto.jobId.substring(0, 8)} <span class="text-on-surface-variant/60">\${dto.message}</span>\`;
+        
+        feed.insertBefore(line, feed.firstChild);
+        setTimeout(() => line.classList.remove('opacity-0'), 10);
+        
+        // Keep only last 20 entries
+        while (feed.children.length > 20) {
+            feed.removeChild(feed.lastChild);
+        }
+    };
+    
+    activityFeedWs.onerror = (error) => {
+        console.error('WebSocket error:', error);
+    };
+    
+    activityFeedWs.onclose = () => {
+        console.log('Disconnected from activity feed, reconnecting in 3s...');
+        setTimeout(initializeActivityFeed, 3000);
+    };
+}
+
+function getStatusColor(type) {
+    switch(type) {
+        case 'PROCESSING': return 'text-primary-container';
+        case 'COMPLETED': return 'text-secondary';
+        case 'ERROR': return 'text-error';
+        case 'RETRY': return 'text-tertiary';
+        case 'DEAD': return 'text-error';
+        case 'SKIPPED': return 'text-on-surface-variant';
+        default: return 'text-on-surface-variant';
+    }
+}
+
+// === DLQ ACTIONS ===
+async function retryDLQJob(jobId) {
+    try {
+        const response = await fetch(\`\${API_BASE}/api/dlq/\${jobId}/retry\`, {
+            method: 'POST'
+        });
+        if (response.ok) {
+            const result = await response.text();
+            alert(result);
+            await loadDLQ();
+        } else {
+            alert('Failed to retry job');
+        }
+    } catch (error) {
+        console.error('Error retrying job:', error);
+        alert('Error: ' + error.message);
+    }
+}
+
+function inspectDLQJob(jobId) {
+    alert(\`Job Details: \${jobId}\`);
+}
+
+// === UTILITIES ===
+function formatNumber(num) {
+    if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + 'M';
+    if (num >= 1_000) return (num / 1_000).toFixed(0) + 'k';
+    return num.toString();
+}
+</script>
+</body></html>
