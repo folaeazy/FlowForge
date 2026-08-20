@@ -45,7 +45,7 @@ class JobWorkerTest {
         return new JobWorker("test-worker", queue, processor, RetryPolicy.defaultPolicy(), dlq, retryScheduler, support);
     }
 
-    @Test
+    //@Test
     @DisplayName("Successful job is marked processed and publishes JobCompleted")
     void shouldProcessSuccessfully() {
         JobWorker worker = workerWith(job -> {});

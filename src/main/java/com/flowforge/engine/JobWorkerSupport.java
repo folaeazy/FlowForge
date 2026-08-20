@@ -3,6 +3,7 @@ package com.flowforge.engine;
 import com.flowforge.core.ports.IdempotencyStore;
 import com.flowforge.core.ports.MetricsStore;
 import com.flowforge.events.JobEventsPublisher;
+import org.springframework.stereotype.Service;
 
 
 /**
@@ -14,6 +15,7 @@ import com.flowforge.events.JobEventsPublisher;
  * (WorkerPool), so bundling them as one unit keeps the constructor
  * readable without reaching for a builder.
  */
+@Service
 public record JobWorkerSupport (
     IdempotencyStore idempotencyStore,
     MetricsStore metricsStore,

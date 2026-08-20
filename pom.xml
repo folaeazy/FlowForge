@@ -23,8 +23,9 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>23</java.version>
+        <java.version>21</java.version>
         <jjwt.version>0.12.6</jjwt.version>
+        <junit-version>5.10.0</junit-version>
         <testcontainers.version>1.21.4</testcontainers.version>
     </properties>
 
@@ -115,9 +116,7 @@
             <artifactId>assertj-core</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
-
 
     <build>
         <plugins>
@@ -135,5 +134,7 @@
             </plugin>
         </plugins>
     </build>
+
+
 
 </project>

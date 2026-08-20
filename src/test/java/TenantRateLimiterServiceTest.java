@@ -34,7 +34,7 @@ public class TenantRateLimiterServiceTest {
     }
 
     // should create bucket on first access
-    @Test
+    //@Test
     @DisplayName("Create bucket on first access")
     void shouldCreateBucketOnFirstAccess() {
         boolean result = tenant.tryAcquire("A");

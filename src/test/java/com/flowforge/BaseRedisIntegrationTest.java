@@ -32,7 +32,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest(
         classes = FlowForgeApplication.class,
-        webEnvironment = SpringBootTest.WebEnvironment.NONE)
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 
 public abstract class BaseRedisIntegrationTest {
 
@@ -49,6 +49,5 @@ public abstract class BaseRedisIntegrationTest {
         registry.add("spring.data.redis.port", () -> REDIS.getMappedPort(6379));
         // No .stop() call — intentional. See class-level comment.
     }
-
 
 }
