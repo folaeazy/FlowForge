@@ -10,6 +10,9 @@ import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.scripting.support.ResourceScriptSource;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
 @Configuration
 public class RedisConfig {
 
@@ -55,14 +58,36 @@ public class RedisConfig {
  * any two lines of the script. This replaces what would otherwise be a
  * GET → compute → SET sequence that has race conditions between steps.
  */
-    @Bean
-    public DefaultRedisScript<Long> rateLimitScript() {
-        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
-        script.setScriptSource(
-                new ResourceScriptSource(new ClassPathResource("scripts/rate_limit.lua"))
-        );
-        script.setResultType(Long.class);
 
+//    @Bean
+//    public DefaultRedisScript<Long> rateLimitScript() {
+//        return new DefaultRedisScript<>(
+//                "classpath:scripts/rate_limit.lua",
+//                Long.class
+//        );
+//    }
+
+
+
+    @Bean
+    public DefaultRedisScript<Long> rateLimitScript() throws IOException {
+        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
+
+        ClassPathResource resource = new ClassPathResource("scripts/rate_limit.lua");
+        System.out.println("EXISTS = " + resource.exists());
+        System.out.println("URL = " + resource.getURL());
+
+        String content = resource.getContentAsString(StandardCharsets.UTF_8);
+        System.out.println("FIRST 100 CHARACTERS:");
+        System.out.println(content.substring(0, Math.min(100, content.length())));
+
+        script.setScriptSource(
+                new ResourceScriptSource(resource)
+        );
+
+        script.setResultType(Long.class);
         return script;
     }
+
+
 }

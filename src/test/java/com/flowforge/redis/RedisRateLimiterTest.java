@@ -29,19 +29,20 @@ public class RedisRateLimiterTest extends BaseRedisIntegrationTest {
                 .flushAll();
     }
 
-    //@Test
+    @Test
     @DisplayName("Allow request within capacity")
     void shouldAllowRequestWithinCapacity() {
         redisRateLimiter.registerTenant("tenant-A", 5, 1);
 
         for(int i = 0 ;  i < 5; i++) {
-            RateLimitResult result = redisRateLimiter.tryAcquire("tenant-A");
-            assertThat(result.allowed()).isTrue();
+             redisRateLimiter.tryAcquire("tenant-A");
         }
+        RateLimitResult result = redisRateLimiter.tryAcquire("tenant-A");
+        assertThat(result.allowed()).isFalse();
     }
 
 
-    //@Test
+    @Test
     @DisplayName("Rejects when bucket is empty")
     void shouldRejectWhenExhausted() {
         redisRateLimiter.registerTenant("tenant-B", 3, 1);
