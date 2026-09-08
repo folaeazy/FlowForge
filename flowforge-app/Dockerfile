@@ -2,16 +2,14 @@
 FROM eclipse-temurin:21-jdk-alpine AS builder
 WORKDIR /build
 
-# Copy Maven wrapper + pom first — separate Docker layer.
-# Docker caches this layer. If only src/ changes (not pom.xml),
-# Maven skips dependency downloads entirely on rebuild.
-# This turns a 3-minute rebuild into a 20-second one.
+
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
+
 RUN chmod +x mvnw
 
 # Download all dependencies into the image layer cache.
-# -q = quiet output, go-offline = no network calls during build
+# -q = quiet output
 RUN ./mvnw dependency:go-offline -q
 
 # Now copy source — this layer only invalidates when code changes
@@ -22,8 +20,9 @@ RUN ./mvnw clean package -DskipTests -q
 
 # ── Stage 2: Runtime ──────────────────────────────────────────────────────────
 # JRE only — strips compiler, Maven, debug tools from final image.
-# eclipse-temurin:21-jre-alpine ≈ 85MB vs 400MB+ for full JDK image
+
 FROM eclipse-temurin:21-jre-alpine AS runtime
+
 WORKDIR /app
 
 # Create non-root user .

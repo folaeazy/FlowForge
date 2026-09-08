@@ -17,7 +17,9 @@ up:
 	docker-compose -f $(COMPOSE_FILE) up --build -d
 	@echo ""
 	@echo "  FlowForge is running"
+	@echo "  Dashboard → http://localhost:8080/dashboard.html"
 	@echo "  App  → http://localhost:8080"
+	@echo "  Simulator → http://localhost:8000"
 	@echo "  Redis→ localhost:6379"
 	@echo ""
 
@@ -68,10 +70,20 @@ status:
 test:
 	./mvnw test
 
+## Run app test only
+test-app:
+	cd flowforge-app && ./mvnw test
+
+## Run engine test only
+test-simulation:
+	cd simulation-engine && ./mvnw test
+
 ## Build the JAR without running tests
 build:
 	./mvnw clean package -DskipTests -q
-	@echo "JAR built → target/$(APP_NAME)-*.jar"
+	@echo "FlowForge application built → flowforge-app/target/"
+	@echo "FlowForge application built → simulation-engine/target/"
+
 ## Run Simulation engine in steady profile mode
 simulate-steady:
 	cd simulation-engine && ./mvnw spring-boot:run -Dspring-boot.run.arguments="steady 100 60"

@@ -36,7 +36,6 @@ class JobWorkerTest {
         capturedEvents = new CopyOnWriteArrayList<>();
 
         // ApplicationEventPublisher is a single-method interface — a lambda
-        // capturing events into a list is all the "publisher" we need here.
         JobEventsPublisher eventPublisher = new JobEventsPublisher(event -> capturedEvents.add((JobEvent) event));
         support = new JobWorkerSupport(idempotencyStore, metricsStore, eventPublisher);
     }

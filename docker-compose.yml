@@ -29,7 +29,7 @@ services:
 
   flowforge:
     build:
-      context: .
+      context: ./flowforge-app
       dockerfile: Dockerfile
     container_name: flowforge-app
     ports:
@@ -44,6 +44,20 @@ services:
     depends_on:
       redis:
         condition: service_healthy  # waits for Redis ping, not just container start
+    restart: unless-stopped
+
+  simulation-engine:
+    build:
+      context: ./simulation-engine
+      dockerfile: Dockerfile
+    container_name: flowforge-simulation
+    ports:
+      - "8000:8000"
+    environment:
+      FLOWFORGE_BASE_URL: http://flowforge:8080
+    depends_on:
+      flowforge:
+        condition: service_started
     restart: unless-stopped
 
 volumes:
