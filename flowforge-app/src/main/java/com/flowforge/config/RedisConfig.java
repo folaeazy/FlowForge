@@ -59,16 +59,6 @@ public class RedisConfig {
  * GET → compute → SET sequence that has race conditions between steps.
  */
 
-//    @Bean
-//    public DefaultRedisScript<Long> rateLimitScript() {
-//        return new DefaultRedisScript<>(
-//                "classpath:scripts/rate_limit.lua",
-//                Long.class
-//        );
-//    }
-
-
-
     @Bean
     public DefaultRedisScript<Long> rateLimitScript() throws IOException {
         DefaultRedisScript<Long> script = new DefaultRedisScript<>();
