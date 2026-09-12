@@ -45,7 +45,7 @@ public class SimulationApplication {
     private static LoadProfile parseProfile(String[] args) {
         if(args.length == 0) {
             //Default : steady 50 jobs/sec for 60 seconds
-            return new  SteadyLoadProfile(50, 60);
+            return new ChaosLoadProfile(75, 30, 180, 0.15);
         }
 
         String profileType = args[0];

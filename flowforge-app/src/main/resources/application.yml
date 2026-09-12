@@ -6,8 +6,9 @@ spring:
     name: flowforge
   data:
     redis:
-      host: ${REDIS_HOST:localhost}    # 'localhost' if env var not set
-      port: ${REDIS_PORT:6379}
+      host: localhost #${REDIS_HOST:localhost}    # 'localhost' if env var not set
+      port: 6379 #${REDIS_PORT:6379}
+      password: 123456789
       timeout: 2000ms
       lettuce:
         pool:
