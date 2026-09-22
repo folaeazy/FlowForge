@@ -7,9 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flowforge.simulation.request.SimulationRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.http.client.BufferingClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
@@ -17,6 +15,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -54,20 +53,37 @@ public class FlowForgeApiClient {
 
     /**
      * Submit a single job to FlowForge.
-     *
+     * @param  request - containing IP and LongUrl
      * @return SubmitResult indicating what happened: ACCEPTED, RATE_LIMITED, or QUEUE_FULL
      */
-    public SubmitResult submitJob(SimulationRequest request) throws JsonProcessingException {
+    public SubmitResult submitJob(SimulationRequest request)  {
 
+        try {
+            String ip = request.identity().ip();
+            String longUrl = request.longUrl();
 
-        Map<String, Object> payload = buildPayload(tenantId, longUrl);
-        String body = objectMapper.writeValueAsString(request);
+            // Job Payload
+            Map<String, Object> jobPayload = new HashMap<>();
+            jobPayload.put("longUrl", longUrl);
 
-        HttpEntity<String> httpRequest = new HttpEntity<>(body, headers);
-        try{
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("tenantId", ip);  // IP is used as tenantId for rate limiting
+            requestBody.put("type", "URL_SHORTEN");
+            requestBody.put("payload", jobPayload);
+
+            // HTTP Header
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            // Serialize to JSON
+            String body = objectMapper.writeValueAsString(requestBody);
+            HttpEntity<String> httpRequest = new HttpEntity<>(body, headers);
+
+            log.debug("Submitting job: ip={}, longUrl={}", ip, longUrl);
+
             ResponseEntity<Map> response = restTemplate.postForEntity(
                     baseUrl + "/api/jobs",
-                    payload,
+                    httpRequest,
                     Map.class
             );
 
@@ -83,6 +99,12 @@ public class FlowForgeApiClient {
             }
         } catch (RestClientException e) {
             log.error("Failed to submit job: {}", e.getMessage());
+            return SubmitResult.ERROR;
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize request body", e);
+            return SubmitResult.ERROR;
+        } catch (Exception e) {
+            log.error("Unexpected error submitting job", e);
             return SubmitResult.ERROR;
         }
     }
