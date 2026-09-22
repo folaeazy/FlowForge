@@ -13,27 +13,28 @@ import java.util.*;
  **/
 public class IdentityPool {
 
-    private final List<String> allIdentities;
+
     private final Queue<String> uniqueQueue;
     private final Queue<String> recurringQueue;
     private final Queue<String> burstQueue;
     private final Random random;
     private final Map<String, Integer> ipFireCount;
+    private final Map<String, Identity> ipToIdentity; // tracks all identity and their category
 
     public IdentityPool(int totalIdentities) {
-        this.allIdentities = new ArrayList<>();
         this.uniqueQueue = new ArrayDeque<>();
         this.recurringQueue = new ArrayDeque<>();
         this.burstQueue = new ArrayDeque<>();
         this.ipFireCount = new HashMap<>();
         this.random = new Random(42);
+        this.ipToIdentity = new HashMap<>();
 
         initialize(totalIdentities);
     }
 
 
     public int totalIdentities() {
-        return allIdentities.size();
+        return ipToIdentity.size();
     }
 
     /**
@@ -60,7 +61,7 @@ public class IdentityPool {
      * Returns the next identity (IP) by randomly selecting a category.
      * Uses weighted distribution: 70% unique, 20% recurring, 10% burst.
      */
-    public String getNextIdentity() {
+    public Identity getNextIdentity() {
         int roll = random.nextInt(100);
 
         Category category = roll < 70 ? Category.UNIQUE
@@ -68,8 +69,11 @@ public class IdentityPool {
                 : Category.BURST;
 
         String ip = nextIdentity(category);
-        if(ip != null) decrementFireCount(ip);
-        return ip;
+        if(ip != null) {
+            decrementFireCount(ip);
+            return ipToIdentity.get(ip); //Identity object
+        }
+        return null;
     }
 
 
@@ -82,7 +86,7 @@ public class IdentityPool {
         // create unique user Identities/IP
         for(int i = 0; i < uniqueCount; i++) {
             String ip = generateRandomIP();
-            allIdentities.add(ip);
+            ipToIdentity.put(ip, new Identity(ip, Category.UNIQUE));
             uniqueQueue.offer(ip);
             ipFireCount.put(ip, 1); //unique fires only once
         }
@@ -90,7 +94,7 @@ public class IdentityPool {
         // create recurring user Identities/IP
         for(int i = 0; i < recurringCount; i++) {
             String ip = generateRandomIP();
-            allIdentities.add(ip);
+            ipToIdentity.put(ip, new Identity(ip, Category.RECURRING));
             recurringQueue.offer(ip);
             int fireCount = 5 + random.nextInt(6);  // 5-10
             ipFireCount.put(ip, fireCount);
@@ -99,7 +103,7 @@ public class IdentityPool {
         // create burst user Identities/IP
         for(int i = 0; i < burstCount; i++) {
             String ip = generateRandomIP();
-            allIdentities.add(ip);
+            ipToIdentity.put(ip, new Identity(ip, Category.BURST));
             burstQueue.offer(ip);
             int fireCount = 10 + random.nextInt(11);  // 10-20
             ipFireCount.put(ip, fireCount);
@@ -133,15 +137,15 @@ public class IdentityPool {
     }
 
     // A little test code
-    public static void main(String[] args) throws InterruptedException{
-        IdentityPool pool = new IdentityPool(10);
-        System.out.println("Unique queue size " + pool.uniqueQueue.size());
-        System.out.println("Recurring queue size " + pool.recurringQueue.size());
-        System.out.println("Burst queue size " + pool.burstQueue.size());
-
-        while (!pool.recurringQueue.isEmpty()) {
-            System.out.println(pool.nextIdentity(Category.RECURRING));
-            Thread.sleep(100);
-        }
-    }
+//    public static void main(String[] args) throws InterruptedException{
+//        IdentityPool pool = new IdentityPool(10);
+//        System.out.println("Unique queue size " + pool.uniqueQueue.size());
+//        System.out.println("Recurring queue size " + pool.recurringQueue.size());
+//        System.out.println("Burst queue size " + pool.burstQueue.size());
+//
+//        while (!pool.recurringQueue.isEmpty()) {
+//            System.out.println(pool.nextIdentity(Category.RECURRING));
+//            Thread.sleep(100);
+//        }
+//    }
 }

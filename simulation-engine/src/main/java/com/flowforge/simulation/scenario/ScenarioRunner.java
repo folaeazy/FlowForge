@@ -1,8 +1,13 @@
 package com.flowforge.simulation.scenario;
 
 import com.flowforge.simulation.client.FlowForgeApiClient;
+import com.flowforge.simulation.identity.Identity;
+import com.flowforge.simulation.identity.IdentityPool;
 import com.flowforge.simulation.profile.LoadProfile;
 import com.flowforge.simulation.report.SimulationReport;
+import com.flowforge.simulation.request.SimulationRequest;
+import com.flowforge.simulation.url.URLGenerator;
+import com.flowforge.simulation.url.UrlPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,96 +40,77 @@ public class ScenarioRunner {
 
     private final FlowForgeApiClient client;
     private final LoadProfile profile;
-    private final List<String> tenants;
+    private final IdentityPool identityPool;
+    private final UrlPool urlPool;
+    private final URLGenerator urlGenerator;
 
     public ScenarioRunner(FlowForgeApiClient client, LoadProfile profile) {
         this.client = client;
         this.profile = profile;
-        this.tenants = List.of("tenant-A", "tenant-B", "tenant-C", "tenant-D", "tenant-E");
+        this.identityPool = new IdentityPool(5000); // 5000 users
+        this.urlPool = new UrlPool(400); //400 urls in pool
+        this.urlGenerator = new URLGenerator(urlPool);
     }
 
     /**
      * Run the scenario from start to finish.
-     *
-     * @param failureRate 0.0–1.0, fraction of jobs to flag as simulateFailure=true
-     * @return a SimulationReport with summary statistics
      */
-    public SimulationReport run(double failureRate){
-        log.info("[Scenario] Starting: {}", profile.name());
+    public SimulationReport run(){
+        log.info("=== Starting Simulation: {} ===", profile.name());
+        log.info("Total identities: {}", identityPool.totalIdentities());
+        log.info("URL pool size: {}", urlPool.size());
+        log.info("Total duration: {}", profile.totalDuration());
 
-        Instant startTime = Instant.now();
-        Duration totalDuration = profile.totalDuration();
+        Instant start = Instant.now();
+        Instant end = start.plus(profile.totalDuration());
+        int totalRequests = 0;
+        int totalFailures = 0;
+        int totalRateLimited = 0;
 
-        AtomicInteger accepted = new AtomicInteger(0);
-        AtomicInteger rateLimited = new AtomicInteger(0);
-        AtomicInteger queueFull = new AtomicInteger(0);
-        AtomicInteger errors = new AtomicInteger(0);
-        int totalSubmitted = 0;
+        while (Instant.now().isBefore(end)) {
+            Duration elapsed = Duration.between(start, Instant.now());
+            double targetRate = profile.targetRateAt(elapsed);
 
-        ThreadLocalRandom random = ThreadLocalRandom.current();
-        int maxRateObserved = 0;
+            int requestsThisSecond = (int) Math.ceil(targetRate);
 
-        while (true) {
-            Duration elapsed = Duration.between(startTime, Instant.now());
+            log.debug("Elapsed: {}s, target rate: {} req/s, firing {} requests",
+                    elapsed.getSeconds(), String.format("%.2f", targetRate), requestsThisSecond);
 
-            if (elapsed.compareTo(totalDuration) >= 0) {
-                log.info("[Scenario] Completed in {}", elapsed);
+            // Submit targetRate` jobs in this second
+            for(int i = 0; i < requestsThisSecond; i++) {
+                try{
+                    // pick random identity
+                    Identity identity = identityPool.getNextIdentity();
+                    if (identity == null) {
+                        log.debug("No more identities available");
+                        continue;
+                    }
+                    // Generate Url (distribution 70/20/10)
+                    String longUrl = urlGenerator.generateUrl();
+
+                    SimulationRequest request = SimulationRequest.create(identity, longUrl);
+                    //Submit to FlowForge API
+                    FlowForgeApiClient.SubmitResult result = client.submitJob(request);
+                    switch (result) {
+                        case ACCEPTED -> totalRequests++;
+                        case RATE_LIMITED -> totalRateLimited++;
+                        case ERROR -> totalFailures++;
+                    }
+                } catch (Exception e) {
+                    log.error("Error submitting request", e);
+                    totalFailures++;
+                }
+            }
+            // Sleep for roughly 1 second to pace the requests
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                log.warn("Simulation interrupted", e);
+                Thread.currentThread().interrupt();
                 break;
-            }
-
-            int targetRate = profile.targetRateAt(elapsed);
-            maxRateObserved = Math.max(maxRateObserved, targetRate);
-
-            // Submit `targetRate` jobs in this second
-            for (int i = 0; i < targetRate; i++) {
-                String tenant = tenants.get(random.nextInt(tenants.size()));
-                boolean shouldFail = random.nextDouble() < failureRate;
-
-                FlowForgeApiClient.SubmitResult result = client.submitJob(
-                        tenant,
-                        "TEST_JOB",
-                        null,
-                        shouldFail
-                );
-
-                switch (result) {
-                    case ACCEPTED -> accepted.incrementAndGet();
-                    case RATE_LIMITED -> rateLimited.incrementAndGet();
-                    case QUEUE_FULL -> queueFull.incrementAndGet();
-                    case ERROR -> errors.incrementAndGet();
-                }
-
-                totalSubmitted++;
-            }
-
-            // Sleep until the next second
-            long elapsedMs = elapsed.toMillis();
-            long nextSecondMs = ((elapsedMs / 1000) + 1) * 1000;
-            long sleepMs = nextSecondMs - elapsedMs;
-
-            if (sleepMs > 0) {
-                try {
-                    Thread.sleep(sleepMs);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    log.warn("[Scenario] Interrupted");
-                    break;
-                }
             }
         }
 
-        Instant endTime = Instant.now();
-        Duration actualDuration = Duration.between(startTime, endTime);
-
-        return new SimulationReport(
-                profile.name(),
-                actualDuration,
-                totalSubmitted,
-                accepted.get(),
-                rateLimited.get(),
-                queueFull.get(),
-                errors.get(),
-                maxRateObserved
-        );
+        return SimulationReport.print(totalRequests, totalFailures, totalRateLimited);
     }
 }

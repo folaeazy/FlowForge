@@ -2,8 +2,12 @@ package com.flowforge.simulation.client;
 
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.flowforge.simulation.request.SimulationRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.BufferingClientHttpRequestFactory;
@@ -28,10 +32,12 @@ public class FlowForgeApiClient {
     private static final Logger log = LoggerFactory.getLogger(FlowForgeApiClient.class);
     private final RestTemplate restTemplate;
     private final String baseUrl;
+    private final ObjectMapper  objectMapper;
 
-    public FlowForgeApiClient(SimulationProperties props) {
+    public FlowForgeApiClient(SimulationProperties props, ObjectMapper objectMapper) {
         this.restTemplate = createRestTemplate();
         this.baseUrl = props.getFlowforgeBaseUrl();
+        this.objectMapper = objectMapper;
     }
 
 
@@ -51,17 +57,17 @@ public class FlowForgeApiClient {
      *
      * @return SubmitResult indicating what happened: ACCEPTED, RATE_LIMITED, or QUEUE_FULL
      */
-    public SubmitResult submitJob(String tenantId, String type, Map<String, Object> payload, boolean simulateFailure) {
-        Map<String, Object> request = Map.of(
-                "tenantId", tenantId,
-                "type", type,
-                "payload", payload != null ? payload : Map.of("simulateFailure", simulateFailure)
-        );
+    public SubmitResult submitJob(SimulationRequest request) throws JsonProcessingException {
 
+
+        Map<String, Object> payload = buildPayload(tenantId, longUrl);
+        String body = objectMapper.writeValueAsString(request);
+
+        HttpEntity<String> httpRequest = new HttpEntity<>(body, headers);
         try{
             ResponseEntity<Map> response = restTemplate.postForEntity(
                     baseUrl + "/api/jobs",
-                    request,
+                    payload,
                     Map.class
             );
 

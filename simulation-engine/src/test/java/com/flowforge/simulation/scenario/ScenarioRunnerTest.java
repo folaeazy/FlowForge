@@ -21,7 +21,7 @@ public class ScenarioRunnerTest {
         SteadyLoadProfile profile = new SteadyLoadProfile(5, 3); // 5 jobs/sec for 3 seconds = ~15 jobs
         ScenarioRunner runner = new ScenarioRunner(mockClient, profile);
 
-        SimulationReport report = runner.run(0.0);
+        SimulationReport report = runner.run();
 
         // With 5 jobs/sec for 3 seconds, we expect ~15 total submissions (allowing for timing variance)
         assertThat(report.totalSubmitted()).isGreaterThanOrEqualTo(10);
@@ -38,7 +38,7 @@ public class ScenarioRunnerTest {
         SteadyLoadProfile profile = new SteadyLoadProfile(10, 2);
         ScenarioRunner runner = new ScenarioRunner(mockClient, profile);
 
-        SimulationReport report = runner.run(0.0);
+        SimulationReport report = runner.run();
 
         assertThat(report.accepted()).isZero();
         assertThat(report.rateLimited()).isGreaterThan(0);

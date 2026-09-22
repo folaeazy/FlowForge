@@ -34,9 +34,7 @@ public class SimulationApplication {
         //Determine profile to run based on command-line args
         LoadProfile profile = parseProfile(args);
         ScenarioRunner runner = new ScenarioRunner(client, profile);
-        SimulationReport report = runner.run(0.0);
-
-        report.print();
+        runner.run();
         context.close();
 
 
