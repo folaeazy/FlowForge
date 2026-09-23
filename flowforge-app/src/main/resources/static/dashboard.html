@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html class="dark" lang="en"><head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -7,7 +6,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=JetBrains+Mono:wght@100..800&amp;display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
     <style>
         body {
@@ -35,6 +33,8 @@
         ::-webkit-scrollbar-thumb { background: #32353c; border-radius: 10px; }
 
         .log-line:nth-child(odd) { background: rgba(255, 255, 255, 0.02); }
+        .hidden { display: none; }
+        .truncate-url { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: bottom; }
     </style>
     <script id="tailwind-config">
         tailwind.config = {
@@ -130,10 +130,10 @@
     </script>
 </head>
 <body class="bg-background text-on-surface">
-<!-- TopNavBar Execution -->
+<!-- TopNavBar -->
 <header class="flex justify-between items-center w-full px-6 h-16 sticky top-0 z-50 bg-surface-container/80 backdrop-blur-xl border-b border-outline-variant/30">
     <div class="flex items-center gap-md">
-        <img alt="FlowForge Logo" class="h-8 w-8" src="data:image/png;base64,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"/>
+        <img alt="FlowForge Logo" class="h-8 w-8" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAHtklEQVR4AezbR+h91INgv0AA1IqAAAAAElFTkSuQmCC"/>
         <span class="font-headline-md text-headline-md font-bold text-primary">FlowForge</span>
         <div class="ml-xl hidden md:flex items-center gap-sm bg-surface-container-high px-sm py-xs rounded-lg border border-outline-variant/50">
             <span class="material-symbols-outlined text-on-surface-variant text-[18px]">account_tree</span>
@@ -150,25 +150,24 @@
             <button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">notifications</button>
             <button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">settings_suggest</button>
             <div class="h-8 w-8 rounded-full overflow-hidden border border-outline-variant/50">
-                <img alt="User profile avatar" class="h-full w-full object-cover" data-alt="A professional headshot of a software engineer with glasses, looking forward with a neutral expression. The image is a stylized avatar with a minimalist background, consistent with a high-tech developer dashboard interface, using deep navy and gray tones." src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg"/>
+                <img alt="User profile avatar" class="h-full w-full object-cover" src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg"/>
             </div>
         </div>
     </div>
 </header>
 <div class="flex min-h-[calc(100vh-64px)]">
-    <!-- SideNavBar Execution -->
+    <!-- SideNavBar -->
     <aside class="flex flex-col h-[calc(100vh-64px)] py-md px-sm sticky left-0 top-16 bg-surface border-r border-outline-variant/30 w-64 shrink-0 hidden md:flex">
         <div class="mb-lg px-sm">
             <div class="font-headline-sm text-headline-sm font-black text-on-surface">FlowForge Node</div>
             <div class="font-body-sm text-body-sm text-on-surface-variant">Distributed System Active</div>
         </div>
         <nav class="flex-1 space-y-1">
-            <!-- Dashboard Active -->
-            <a class="flex items-center gap-md px-sm py-md text-secondary font-bold bg-secondary/10 border-r-2 border-secondary transition-all font-body-md text-body-md" href="#">
+            <a data-view="dashboard" class="nav-link flex items-center gap-md px-sm py-md text-secondary font-bold bg-secondary/10 border-r-2 border-secondary transition-all font-body-md text-body-md" href="#">
                 <span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
                 Dashboard
             </a>
-            <a class="flex items-center gap-md px-sm py-md text-on-surface-variant hover:bg-white/5 transition-all font-body-md text-body-md" href="#">
+            <a data-view="jobs" class="nav-link flex items-center gap-md px-sm py-md text-on-surface-variant hover:bg-white/5 transition-all font-body-md text-body-md" href="#">
                 <span class="material-symbols-outlined" data-icon="work">work</span>
                 Jobs
             </a>
@@ -206,133 +205,162 @@
     </aside>
     <!-- Main Content -->
     <main class="flex-1 p-lg overflow-y-auto space-y-lg">
-        <!-- Section 1: KPI Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-md">
-            <!-- Jobs Processed -->
-            <div class="glass-card p-md rounded-xl">
-                <div class="flex justify-between items-start mb-sm">
-                    <span class="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-wider">Jobs Processed</span>
-                    <span class="material-symbols-outlined text-primary text-[20px]">sync</span>
-                </div>
-                <div class="font-headline-md text-headline-md text-on-surface" id="metric-processed">0</div>
-                <div class="flex items-center gap-xs text-secondary font-mono-label text-mono-label mt-xs">
-                    <span class="material-symbols-outlined text-[14px]">trending_up</span>
-                    <span id="metric-processed-pct">—</span>
-                </div>
-            </div>
-            <!-- Failed Jobs -->
-            <div class="glass-card p-md rounded-xl">
-                <div class="flex justify-between items-start mb-sm">
-                    <span class="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-wider">Failed Jobs</span>
-                    <span class="material-symbols-outlined text-error text-[20px]">warning</span>
-                </div>
-                <div class="font-headline-md text-headline-md text-on-surface" id="metric-failed">0</div>
-                <div class="flex items-center gap-xs text-secondary font-mono-label text-mono-label mt-xs">
-                    <span class="material-symbols-outlined text-[14px]">trending_down</span>
-                    <span id="metric-failed-pct">—</span>
-                </div>
-            </div>
-            <!-- Retry Count -->
-            <div class="glass-card p-md rounded-xl">
-                <div class="flex justify-between items-start mb-sm">
-                    <span class="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-wider">Retry Count</span>
-                    <span class="material-symbols-outlined text-tertiary text-[20px]">refresh</span>
-                </div>
-                <div class="font-headline-md text-headline-md text-on-surface" id="metric-retried">0</div>
-                <div class="flex items-center gap-xs text-error font-mono-label text-mono-label mt-xs">
-                    <span class="material-symbols-outlined text-[14px]">trending_up</span>
-                    <span id="metric-retried-pct">—</span>
-                </div>
-            </div>
-            <!-- Queue Size -->
-            <div class="glass-card p-md rounded-xl">
-                <div class="flex justify-between items-start mb-sm">
-                    <span class="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-wider">Queue Size</span>
-                    <span class="material-symbols-outlined text-on-surface-variant text-[20px]">reorder</span>
-                </div>
-                <div class="font-headline-md text-headline-md text-on-surface" id="metric-queue">0</div>
-                <div class="flex items-center gap-xs text-error font-mono-label text-mono-label mt-xs">
-                    <span class="material-symbols-outlined text-[14px]">trending_up</span>
-                    <span id="metric-queue-pct">—</span>
-                </div>
-            </div>
-            <!-- Active Workers -->
-            <div class="glass-card p-md rounded-xl">
-                <div class="flex justify-between items-start mb-sm">
-                    <span class="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-wider">Active Workers</span>
-                    <span class="material-symbols-outlined text-secondary text-[20px]">memory</span>
-                </div>
-                <div class="font-headline-md text-headline-md text-on-surface" id="metric-workers">4</div>
-                <div class="flex items-center gap-xs text-on-surface-variant font-mono-label text-mono-label mt-xs">
-                    <span class="material-symbols-outlined text-[14px]">remove</span>
-                    Stable <span class="text-on-surface-variant/60 ml-xs">at capacity</span>
-                </div>
-            </div>
-        </div>
-        <!-- Section 2: Throughput and Activity -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-lg">
-            <!-- Left: Job Throughput Chart -->
-            <div class="lg:col-span-2 glass-card rounded-xl p-lg">
-                <div class="flex justify-between items-center mb-lg">
-                    <h3 class="font-headline-sm text-headline-sm">Job Throughput (TPS)</h3>
-                    <div class="flex gap-sm">
-<span class="flex items-center gap-xs font-mono-label text-mono-label text-secondary">
-<span class="h-2 w-2 rounded-full bg-secondary"></span> Success
-                            </span>
-                        <span class="flex items-center gap-xs font-mono-label text-mono-label text-error">
-<span class="h-2 w-2 rounded-full bg-error"></span> Failed
-                            </span>
+
+        <!-- ============ DASHBOARD VIEW ============ -->
+        <section id="view-dashboard" class="space-y-lg">
+            <!-- Section 1: KPI Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-md">
+                <div class="glass-card p-md rounded-xl">
+                    <div class="flex justify-between items-start mb-sm">
+                        <span class="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-wider">Jobs Processed</span>
+                        <span class="material-symbols-outlined text-primary text-[20px]">sync</span>
+                    </div>
+                    <div class="font-headline-md text-headline-md text-on-surface" id="metric-processed">0</div>
+                    <div class="flex items-center gap-xs text-secondary font-mono-label text-mono-label mt-xs">
+                        <span class="material-symbols-outlined text-[14px]">trending_up</span>
+                        <span id="metric-processed-pct">—</span>
                     </div>
                 </div>
-                <div style="height: 250px;">
-                    <canvas id="throughput-chart"></canvas>
+                <div class="glass-card p-md rounded-xl">
+                    <div class="flex justify-between items-start mb-sm">
+                        <span class="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-wider">Failed Jobs</span>
+                        <span class="material-symbols-outlined text-error text-[20px]">warning</span>
+                    </div>
+                    <div class="font-headline-md text-headline-md text-on-surface" id="metric-failed">0</div>
+                    <div class="flex items-center gap-xs text-secondary font-mono-label text-mono-label mt-xs">
+                        <span class="material-symbols-outlined text-[14px]">trending_down</span>
+                        <span id="metric-failed-pct">—</span>
+                    </div>
+                </div>
+                <div class="glass-card p-md rounded-xl">
+                    <div class="flex justify-between items-start mb-sm">
+                        <span class="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-wider">Retry Count</span>
+                        <span class="material-symbols-outlined text-tertiary text-[20px]">refresh</span>
+                    </div>
+                    <div class="font-headline-md text-headline-md text-on-surface" id="metric-retried">0</div>
+                    <div class="flex items-center gap-xs text-error font-mono-label text-mono-label mt-xs">
+                        <span class="material-symbols-outlined text-[14px]">trending_up</span>
+                        <span id="metric-retried-pct">—</span>
+                    </div>
+                </div>
+                <div class="glass-card p-md rounded-xl">
+                    <div class="flex justify-between items-start mb-sm">
+                        <span class="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-wider">Queue Size</span>
+                        <span class="material-symbols-outlined text-on-surface-variant text-[20px]">reorder</span>
+                    </div>
+                    <div class="font-headline-md text-headline-md text-on-surface" id="metric-queue">0</div>
+                    <div class="flex items-center gap-xs text-error font-mono-label text-mono-label mt-xs">
+                        <span class="material-symbols-outlined text-[14px]">trending_up</span>
+                        <span id="metric-queue-pct">—</span>
+                    </div>
+                </div>
+                <div class="glass-card p-md rounded-xl">
+                    <div class="flex justify-between items-start mb-sm">
+                        <span class="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-wider">Active Workers</span>
+                        <span class="material-symbols-outlined text-secondary text-[20px]">memory</span>
+                    </div>
+                    <div class="font-headline-md text-headline-md text-on-surface" id="metric-workers">4</div>
+                    <div class="flex items-center gap-xs text-on-surface-variant font-mono-label text-mono-label mt-xs">
+                        <span class="material-symbols-outlined text-[14px]">remove</span>
+                        Stable <span class="text-on-surface-variant/60 ml-xs">at capacity</span>
+                    </div>
                 </div>
             </div>
-            <!-- Right: Real-Time Activity Feed -->
-            <div class="glass-card rounded-xl flex flex-col h-[350px]">
-                <div class="p-md border-b border-outline-variant/30 flex justify-between items-center bg-surface-container/50">
-                    <h3 class="font-headline-sm text-headline-sm">Activity Feed</h3>
-                    <span class="font-mono-label text-mono-label text-on-surface-variant px-xs rounded bg-surface">LIVE</span>
+
+            <!-- Section 2: Throughput and Activity -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-lg">
+                <div class="lg:col-span-2 glass-card rounded-xl p-lg">
+                    <div class="flex justify-between items-center mb-lg">
+                        <h3 class="font-headline-sm text-headline-sm">Job Throughput (TPS)</h3>
+                        <div class="flex gap-sm">
+                            <span class="flex items-center gap-xs font-mono-label text-mono-label text-secondary">
+                                <span class="h-2 w-2 rounded-full bg-secondary"></span> Success
+                            </span>
+                            <span class="flex items-center gap-xs font-mono-label text-mono-label text-error">
+                                <span class="h-2 w-2 rounded-full bg-error"></span> Failed
+                            </span>
+                        </div>
+                    </div>
+                    <div style="height: 250px;">
+                        <canvas id="throughput-chart"></canvas>
+                    </div>
                 </div>
-                <div class="flex-1 overflow-y-auto p-sm font-mono-label text-mono-label bg-black/40" id="activity-feed">
-                    <div class="p-1 text-on-surface-variant text-center">Connecting to activity feed...</div>
+                <div class="glass-card rounded-xl flex flex-col h-[350px]">
+                    <div class="p-md border-b border-outline-variant/30 flex justify-between items-center bg-surface-container/50">
+                        <h3 class="font-headline-sm text-headline-sm">Activity Feed</h3>
+                        <span class="font-mono-label text-mono-label text-on-surface-variant px-xs rounded bg-surface">LIVE</span>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-sm font-mono-label text-mono-label bg-black/40" id="activity-feed">
+                        <div class="p-1 text-on-surface-variant text-center">Connecting to activity feed...</div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <!-- Section 3: Rate Limits and DLQ Table -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-lg">
-            <!-- Left: Rate Limit Usage -->
-            <div class="glass-card rounded-xl p-lg">
-                <h3 class="font-headline-sm text-headline-sm mb-lg">Tenant Rate Limit Usage</h3>
-                <div class="space-y-md" id="rate-limits-container">
-                    <div class="text-on-surface-variant text-body-sm">Loading rate limits...</div>
+
+            <!-- Section 3: Rate Limits and DLQ Table -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-lg">
+                <div class="glass-card rounded-xl p-lg">
+                    <h3 class="font-headline-sm text-headline-sm mb-lg">Tenant Rate Limit Usage</h3>
+                    <div class="space-y-md" id="rate-limits-container">
+                        <div class="text-on-surface-variant text-body-sm">Loading rate limits...</div>
+                    </div>
+                </div>
+                <div class="glass-card rounded-xl flex flex-col">
+                    <div class="p-md border-b border-outline-variant/30">
+                        <h3 class="font-headline-sm text-headline-sm">Failed Jobs (DLQ)</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left font-body-sm text-body-sm">
+                            <thead class="bg-surface-container-high border-b border-outline-variant/30 text-on-surface-variant uppercase">
+                            <tr>
+                                <th class="px-md py-sm">Job ID</th>
+                                <th class="px-md py-sm">Tenant</th>
+                                <th class="px-md py-sm">Retries</th>
+                                <th class="px-md py-sm">Status</th>
+                                <th class="px-md py-sm text-right">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody class="divide-y divide-outline-variant/20" id="dlq-table-body">
+                            <tr>
+                                <td colspan="5" class="px-md py-sm text-center text-on-surface-variant">Loading DLQ entries...</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-            <!-- Right: Failed Jobs Table -->
+        </section>
+
+        <!-- ============ JOBS VIEW (Shortened URLs) ============ -->
+        <section id="view-jobs" class="space-y-lg hidden">
             <div class="glass-card rounded-xl flex flex-col">
-                <div class="p-md border-b border-outline-variant/30">
-                    <h3 class="font-headline-sm text-headline-sm">Failed Jobs (DLQ)</h3>
+                <div class="p-md border-b border-outline-variant/30 flex justify-between items-center">
+                    <h3 class="font-headline-sm text-headline-sm">Shortened URLs</h3>
+                    <div class="flex items-center gap-sm">
+                        <button id="urls-prev" class="text-on-surface-variant hover:text-on-surface disabled:opacity-30 font-mono-label text-mono-label">← Prev</button>
+                        <span id="urls-page-label" class="font-mono-label text-mono-label text-on-surface-variant">Page 1</span>
+                        <button id="urls-next" class="text-on-surface-variant hover:text-on-surface disabled:opacity-30 font-mono-label text-mono-label">Next →</button>
+                    </div>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left font-body-sm text-body-sm">
                         <thead class="bg-surface-container-high border-b border-outline-variant/30 text-on-surface-variant uppercase">
                         <tr>
-                            <th class="px-md py-sm">Job ID</th>
+                            <th class="px-md py-sm">Short Code</th>
+                            <th class="px-md py-sm">Long URL</th>
                             <th class="px-md py-sm">Tenant</th>
-                            <th class="px-md py-sm">Retries</th>
-                            <th class="px-md py-sm">Status</th>
+                            <th class="px-md py-sm">Created</th>
+                            <th class="px-md py-sm">Hits</th>
                             <th class="px-md py-sm text-right">Action</th>
                         </tr>
                         </thead>
-                        <tbody class="divide-y divide-outline-variant/20" id="dlq-table-body">
-                        <tr>
-                            <td colspan="5" class="px-md py-sm text-center text-on-surface-variant">Loading DLQ entries...</td>
-                        </tr>
+                        <tbody class="divide-y divide-outline-variant/20" id="urls-table-body">
+                        <tr><td colspan="6" class="px-md py-sm text-center text-on-surface-variant">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
-        </div>
+        </section>
+
     </main>
 </div>
 <!-- Mobile Navigation Shell -->
@@ -358,6 +386,8 @@
     const API_BASE = 'http://localhost:8080';
     const TENANT_ID = 'tenant-A';
     let activityFeedWs = null;
+    let currentUrlsPage = 0;
+    const URLS_PAGE_SIZE = 20;
 
     // === INITIALIZATION ===
     document.addEventListener('DOMContentLoaded', async () => {
@@ -367,12 +397,50 @@
         await loadRateLimits();
         await loadDLQ();
 
-        // Refresh metrics every 5 seconds
         setInterval(loadMetrics, 5000);
         setInterval(loadThroughput, 10000);
         setInterval(loadRateLimits, 8000);
         setInterval(loadDLQ, 8000);
+
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                showView(link.dataset.view);
+            });
+        });
+
+        document.getElementById('urls-prev').addEventListener('click', () => {
+            if (currentUrlsPage > 0) {
+                currentUrlsPage--;
+                loadShortenedUrls(currentUrlsPage);
+            }
+        });
+
+        document.getElementById('urls-next').addEventListener('click', () => {
+            currentUrlsPage++;
+            loadShortenedUrls(currentUrlsPage);
+        });
     });
+
+    // === VIEW SWITCHING ===
+    function showView(viewName) {
+        document.querySelectorAll('[id^="view-"]').forEach(el => el.classList.add('hidden'));
+        document.getElementById(`view-${viewName}`).classList.remove('hidden');
+
+        document.querySelectorAll('.nav-link').forEach(link => {
+            const active = link.dataset.view === viewName;
+            link.classList.toggle('text-secondary', active);
+            link.classList.toggle('bg-secondary/10', active);
+            link.classList.toggle('border-r-2', active);
+            link.classList.toggle('border-secondary', active);
+            link.classList.toggle('font-bold', active);
+            link.classList.toggle('text-on-surface-variant', !active);
+        });
+
+        if (viewName === 'jobs') {
+            loadShortenedUrls(currentUrlsPage);
+        }
+    }
 
     // === METRICS ===
     async function loadMetrics() {
@@ -423,11 +491,7 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        },
+                        plugins: { legend: { display: false } },
                         scales: {
                             x: {
                                 stacked: false,
@@ -478,7 +542,7 @@
                     `;
                     container.insertAdjacentHTML('beforeend', html);
                 } catch (e) {
-                    console.error('Failed to load rate limit for ', e);
+                    console.error('Failed to load rate limit for', tenant, e);
                 }
             }
         } catch (error) {
@@ -500,20 +564,59 @@
 
             tbody.innerHTML = jobs.map(job => `
                 <tr class="hover:bg-white/5 transition-colors">
-                    <td class="px-md py-sm font-mono-label">#\${job.jobId.substring(0, 8)}</td>
-                    <td class="px-md py-sm">\${job.tenantId}</td>
-                    <td class="px-md py-sm">\${job.attemptCount}/\${job.maxRetries}</td>
+                    <td class="px-md py-sm font-mono-label">#${job.jobId.substring(0, 8)}</td>
+                    <td class="px-md py-sm">${job.tenantId}</td>
+                    <td class="px-md py-sm">${job.attemptCount}/${job.maxRetries}</td>
                     <td class="px-md py-sm">
-                        <span class="px-sm py-xs bg-error/10 text-error rounded text-[10px] uppercase font-bold">\${job.status}</span>
+                        <span class="px-sm py-xs bg-error/10 text-error rounded text-[10px] uppercase font-bold">${job.status}</span>
                     </td>
                     <td class="px-md py-sm text-right space-x-sm">
-                        <button class="text-primary hover:underline" onclick="retryDLQJob('\${job.jobId}')">Retry</button>
-                        <button class="text-on-surface-variant hover:text-on-surface" onclick="inspectDLQJob('\${job.jobId}')">Inspect</button>
+                        <button class="text-primary hover:underline" onclick="retryDLQJob('${job.jobId}')">Retry</button>
+                        <button class="text-on-surface-variant hover:text-on-surface" onclick="inspectDLQJob('${job.jobId}')">Inspect</button>
                     </td>
                 </tr>
             `).join('');
         } catch (error) {
             console.error('Failed to load DLQ:', error);
+        }
+    }
+
+    // === SHORTENED URLS TABLE (Jobs view) ===
+    async function loadShortenedUrls(page) {
+        try {
+            const response = await fetch(`${API_BASE}/api/urls?tenantId=${TENANT_ID}&page=${page}&size=${URLS_PAGE_SIZE}`);
+            const urls = await response.json();
+
+            const tbody = document.getElementById('urls-table-body');
+            if (!urls || urls.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-md py-sm text-center text-on-surface-variant">No shortened URLs yet</td></tr>';
+            } else {
+                tbody.innerHTML = urls.map(u => `
+                    <tr class="hover:bg-white/5 transition-colors">
+                        <td class="px-md py-sm font-mono-label">
+                            <a href="${API_BASE}/${u.shortCode}" target="_blank" class="text-primary hover:underline">${u.shortCode}</a>
+                        </td>
+                        <td class="px-md py-sm text-on-surface-variant">
+                            <span class="truncate-url" title="${u.longUrl}">${u.longUrl}</span>
+                        </td>
+                        <td class="px-md py-sm">${u.tenantId}</td>
+                        <td class="px-md py-sm font-mono-label text-on-surface-variant">${new Date(u.createdAt).toLocaleTimeString()}</td>
+                        <td class="px-md py-sm">${u.hitCount ?? 0}</td>
+                        <td class="px-md py-sm text-right">
+                            <a href="${API_BASE}/${u.shortCode}" target="_blank" class="text-primary hover:underline">Test</a>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            document.getElementById('urls-page-label').textContent = `Page ${page + 1}`;
+            document.getElementById('urls-prev').disabled = page === 0;
+            document.getElementById('urls-next').disabled = urls.length < URLS_PAGE_SIZE;
+
+        } catch (error) {
+            console.error('Failed to load shortened URLs:', error);
+            document.getElementById('urls-table-body').innerHTML =
+                '<tr><td colspan="6" class="px-md py-sm text-center text-error">Failed to load — is /api/urls implemented?</td></tr>';
         }
     }
 
@@ -542,7 +645,6 @@
             feed.insertBefore(line, feed.firstChild);
             setTimeout(() => line.classList.remove('opacity-0'), 10);
 
-            // Keep only last 20 entries
             while (feed.children.length > 20) {
                 feed.removeChild(feed.lastChild);
             }
@@ -558,8 +660,6 @@
         };
     }
 
-
-
     function getStatusColor(type) {
         switch(type) {
             case 'PROCESSING': return 'text-primary-container';
@@ -570,8 +670,6 @@
             case 'SKIPPED': return 'text-on-surface-variant';
             default: return 'text-on-surface-variant';
         }
-
-
     }
 
     // === DLQ ACTIONS ===
@@ -603,7 +701,6 @@
         if (num >= 1_000) return (num / 1_000).toFixed(0) + 'k';
         return num.toString();
     }
-
 </script>
 </body>
 </html>

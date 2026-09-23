@@ -73,6 +73,7 @@ public class FlowForgeApiClient {
 
             // HTTP Header
             HttpHeaders headers = new HttpHeaders();
+            headers.set("X-Tenant-Id", ip);  // Rate limiter intercepts this
             headers.setContentType(MediaType.APPLICATION_JSON);
 
             // Serialize to JSON

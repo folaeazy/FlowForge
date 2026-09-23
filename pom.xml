@@ -20,6 +20,7 @@
     <modules>
         <module>flowforge-app</module>
         <module>simulation-engine</module>
+        <module>consumer-engine</module>
     </modules>
 
     <build>
