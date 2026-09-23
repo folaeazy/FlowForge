@@ -167,6 +167,6 @@ public class RedisRateLimiter implements RateLimiter {
 
     private RateLimitResult failOpen(String tenantId, String reason) {
         log.warn("[RateLimiter] Fail-open applied tenant={} reason={}", tenantId, reason);
-        return RateLimitResult.allowed(tenantId, 0);
+        return RateLimitResult.rejected(tenantId, 0);
     }
 }

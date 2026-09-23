@@ -99,7 +99,7 @@ public class FlowForgeApiClient {
                 return SubmitResult.ERROR;
             }
         } catch (RestClientException e) {
-            log.error("Failed to submit job: {}", e.getMessage());
+            log.error("Failed to submit job: {}", e.getMessage()); //TODO : watch
             return SubmitResult.ERROR;
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize request body", e);
