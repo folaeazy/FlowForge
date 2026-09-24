@@ -48,7 +48,7 @@ public class RateLimiterFilter implements Filter {
         if (!result.allowed()) {
             // Rate limited — return 429 immediately, never reach controller
             httpResponse.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-            httpResponse.getWriter().write("Rate limit exceeded");
+            httpResponse.getWriter().write("Rate limit exceeded..");
             return;
         }
         filterChain.doFilter(servletRequest, servletResponse);

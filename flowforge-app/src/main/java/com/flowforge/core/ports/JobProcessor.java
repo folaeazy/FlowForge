@@ -18,5 +18,19 @@ public interface JobProcessor {
      * Process a job. Throw any exception to signal failure.
      * MUST be idempotent — the same job may arrive more than once on retry.
      */
-    void process(Job job) throws Exception;
+    JobProcessor.Result process(Job job) throws Exception;
+
+    /**
+     * Returns the job type this processor handles.
+     * Example: "URL_SHORTEN", "TEST_JOB", "EMAIL_SEND", etc.
+     */
+    String getJobType();
+
+
+
+    record Result(
+            boolean success,
+            String output,           // Job-specific result (e.g., short code)
+            String failureReason     // If success=false, why it failed
+    ) {}
 }

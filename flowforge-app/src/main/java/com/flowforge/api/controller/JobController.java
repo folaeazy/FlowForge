@@ -39,8 +39,6 @@ public class JobController {
         return switch (result) {
             case ACCEPTED -> ResponseEntity.status(HttpStatus.ACCEPTED)
                     .body(new JobSubmitResponse(job.getJobId(), "ACCEPTED"));
-            case RATE_LIMITED -> ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                    .body(new JobSubmitResponse(job.getJobId(), "RATE_LIMITED"));
             case QUEUE_FULL -> ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                     .body(new JobSubmitResponse(job.getJobId(), "QUEUE_FULL"));
         };

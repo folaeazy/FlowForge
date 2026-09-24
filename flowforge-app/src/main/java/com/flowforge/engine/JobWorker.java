@@ -21,22 +21,24 @@ public class JobWorker implements Runnable{
 
     private final String workerId;
     private final BlockingQueue<Job> queue;
-    private final JobProcessor processor;
+    //private final JobProcessor processor;
     private final RetryPolicy retryPolicy;
     private final DeadLetterQueue deadLetterQueue;
     private final ScheduledExecutorService retryScheduler;
     private final JobWorkerSupport support;
+    private final JobProcessorRegistry processorRegistry;
 
     private volatile boolean running = true;
 
-    public JobWorker(String workerId, BlockingQueue<Job> queue, JobProcessor processor, RetryPolicy retryPolicy, DeadLetterQueue deadLetterQueue, ScheduledExecutorService retryScheduler, JobWorkerSupport support) {
+    public JobWorker(String workerId, BlockingQueue<Job> queue, RetryPolicy retryPolicy, DeadLetterQueue deadLetterQueue, ScheduledExecutorService retryScheduler, JobWorkerSupport support, JobProcessorRegistry processorRegistry) {
         this.workerId = workerId;
         this.queue = queue;
-        this.processor = processor;
+        //this.processor = processor;
         this.retryPolicy = retryPolicy;
         this.deadLetterQueue = deadLetterQueue;
         this.retryScheduler = retryScheduler;
         this.support = support;
+        this.processorRegistry = processorRegistry;
     }
 
 
@@ -72,37 +74,42 @@ public class JobWorker implements Runnable{
      * clean slate before this thread picks up its next job.
      */
     void processJob(Job job) {
-        Job processing = job.markProcessing();
+        Job JobInProgress = job.markProcessing();
 
-        MDC.put("tenantId", processing.getTenantId());
-        MDC.put("jobId", processing.getJobId());
-        MDC.put("attempt", String.valueOf(processing.getAttemptCount()));
+        MDC.put("tenantId", JobInProgress.getTenantId());
+        MDC.put("jobId", JobInProgress.getJobId());
+        MDC.put("attempt", String.valueOf(JobInProgress.getAttemptCount()));
 
         try {
-            if(support.idempotencyStore().isProcessed(processing.getJobId())) {
+            if(support.idempotencyStore().isProcessed(JobInProgress.getJobId())) {
                 log.info("[{}] Skipping already-processed job", workerId);
                 support.eventsPublisher().publish(
-                        new JobEvent.JobSkippedDuplicate(processing.getJobId() , processing.getTenantId(), Instant.now()));
+                        new JobEvent.JobSkippedDuplicate(JobInProgress.getJobId() , JobInProgress.getTenantId(), Instant.now()));
                 return;
             }
             log.info("[{}] Processing", workerId);
             support.eventsPublisher().publish(new JobEvent.JobProcessingStarted(
-                    processing.getJobId(), processing.getTenantId(), workerId,
-                    processing.getAttemptCount(), Instant.now()));
+                    JobInProgress.getJobId(), JobInProgress.getTenantId(), workerId,
+                    JobInProgress.getAttemptCount(), Instant.now()));
+            // Get the right processor
+            JobProcessor processor = processorRegistry.getProcessor(job.getType());
 
-            processor.process(processing);
+            JobProcessor.Result result = processor.process(JobInProgress);
+            if(result.success()) {
+                // Mark processed ONLY after success.
+                support.idempotencyStore().markProcessed(JobInProgress.getJobId(), 86_400);
+                support.metricsStore().incrementProcessed(JobInProgress.getTenantId());
 
-            // Mark processed ONLY after success.
-            support.idempotencyStore().markProcessed(processing.getJobId(), 86_400);
-            support.metricsStore().incrementProcessed(processing.getTenantId());
-
-            log.info("[{}] Completed", workerId);
-            support.eventsPublisher().publish(new JobEvent.JobCompleted(
-                    processing.getJobId(), processing.getTenantId(), workerId, Instant.now()
-            ));
+                log.info("[{}] Completed", workerId);
+                support.eventsPublisher().publish(new JobEvent.JobCompleted(
+                        JobInProgress.getJobId(), JobInProgress.getTenantId(), workerId, Instant.now()
+                ));
+            } else {
+                support.eventsPublisher().publish(new JobEvent.JobFailed(job.getJobId(), job.getTenantId(), workerId, result.failureReason(),1, Instant.now()));
+            }
 
         }catch (Exception e) {
-            handleFailure(processing, e);
+            handleFailure(JobInProgress, e);
         }finally {
             MDC.clear();
         }

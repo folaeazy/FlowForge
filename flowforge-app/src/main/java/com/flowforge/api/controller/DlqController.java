@@ -72,7 +72,7 @@ public class DlqController {
 
         return switch (result) {
             case ACCEPTED -> ResponseEntity.ok("Resubmitted as jobId=" + resubmitted.getJobId());
-            case RATE_LIMITED -> ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("Tenant rate limited");
+            //case RATE_LIMITED -> ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("Tenant rate limited");
             case QUEUE_FULL -> ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("Queue full");
 
         };

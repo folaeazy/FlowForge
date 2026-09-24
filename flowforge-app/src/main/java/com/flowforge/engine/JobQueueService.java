@@ -22,7 +22,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 public class JobQueueService {
     private static final Logger log = LoggerFactory.getLogger(JobQueueService.class);
 
-    public enum SubmitResult { ACCEPTED, RATE_LIMITED, QUEUE_FULL }
+    public enum SubmitResult { ACCEPTED, QUEUE_FULL }
 
     private final BlockingQueue<Job> jobQueue;
     private final RateLimiter rateLimiter;
@@ -35,12 +35,6 @@ public class JobQueueService {
     }
 
     public SubmitResult submit(Job job) {
-        RateLimitResult limitResult = rateLimiter.tryAcquire(job.getTenantId());
-        if (!limitResult.allowed()) {
-            log.debug("[Submit] Rate limited tenant={}", job.getTenantId());
-            return SubmitResult.RATE_LIMITED;
-        }
-
         boolean enqueued = jobQueue.offer(job);
         metricsStore.recordQueueSize(jobQueue.size());
 
