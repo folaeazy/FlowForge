@@ -4,6 +4,7 @@ import com.flowforge.core.domain.Job;
 import com.flowforge.core.domain.RetryPolicy;
 import com.flowforge.core.ports.JobProcessor;
 import com.flowforge.events.JobEvent;
+import com.flowforge.exception.JobProcessingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -21,7 +22,6 @@ public class JobWorker implements Runnable{
 
     private final String workerId;
     private final BlockingQueue<Job> queue;
-    //private final JobProcessor processor;
     private final RetryPolicy retryPolicy;
     private final DeadLetterQueue deadLetterQueue;
     private final ScheduledExecutorService retryScheduler;
@@ -105,7 +105,7 @@ public class JobWorker implements Runnable{
                         JobInProgress.getJobId(), JobInProgress.getTenantId(), workerId, Instant.now()
                 ));
             } else {
-                support.eventsPublisher().publish(new JobEvent.JobFailed(job.getJobId(), job.getTenantId(), workerId, result.failureReason(),1, Instant.now()));
+                handleFailure(JobInProgress, new JobProcessingException(result.failureReason()));
             }
 
         }catch (Exception e) {
@@ -120,6 +120,10 @@ public class JobWorker implements Runnable{
     private void handleFailure(Job job, Exception cause) {
         log.warn("[{}] Failed: {}", workerId, cause.getMessage());
         support.metricsStore().incrementFailed(job.getTenantId()); //update metrics
+
+        support.eventsPublisher().publish(new JobEvent.JobFailed(
+                job.getJobId(), job.getTenantId(), workerId, cause.getMessage(), job.getAttemptCount(), Instant.now()
+        )); // publish event
 
         if(job.hasRetriesLeft()){
             Job failed = job.markFailed();
