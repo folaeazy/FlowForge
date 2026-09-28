@@ -11,7 +11,6 @@ import com.flowforge.core.domain.Job;
  *  *
  *  * @FunctionalInterface means implementations can be lambdas —
  */
-@FunctionalInterface
 public interface JobProcessor {
 
     /**

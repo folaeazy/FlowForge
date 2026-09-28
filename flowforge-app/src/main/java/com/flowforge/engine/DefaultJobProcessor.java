@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 public class DefaultJobProcessor implements JobProcessor {
     private static final Logger log = LoggerFactory.getLogger(DefaultJobProcessor.class);
     @Override
-    public Result process(Job job) throws Exception {
+    public Result process(Job job) {
 
         log.info("[DefaultJobProcessor] Processing type={} payload={}", job.getType(), job.getPayload());
         // TODO: This is where url shortener processing comes in
