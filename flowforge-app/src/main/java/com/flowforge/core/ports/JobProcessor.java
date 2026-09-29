@@ -17,7 +17,7 @@ public interface JobProcessor {
      * Process a job. Throw any exception to signal failure.
      * MUST be idempotent — the same job may arrive more than once on retry.
      */
-    JobProcessor.Result process(Job job) throws Exception;
+    JobProcessor.Result process(Job job) ;
 
     /**
      * Returns the job type this processor handles.
