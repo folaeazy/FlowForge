@@ -149,12 +149,8 @@ public class UrlShortenerJobProcessor implements JobProcessor {
     }
 
     private String extractLongUrl(Job job) {
-        Object payload = job.getPayload();
-        if (payload instanceof Map<?, ?> map) {
-            Object longUrl = map.get("longUrl");
-            return longUrl != null ? longUrl.toString() : null;
-        }
-        return null;
+        Object longUrl = job.getPayload().get("longUrl");
+        return longUrl != null ? longUrl.toString() : null;
     }
 
     @Override
