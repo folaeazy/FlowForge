@@ -36,7 +36,7 @@ public class WorkerPool {
     private static final Logger log = LoggerFactory.getLogger(WorkerPool.class);
 
     private final BlockingQueue<Job> jobQueue;
-    private final JobProcessor processor;
+    private final JobProcessorRegistry processor;
     private final DeadLetterQueue dlq;
     private final ScheduledExecutorService retryScheduler;
     private final JobWorkerSupport support;
@@ -49,7 +49,7 @@ public class WorkerPool {
 
     public WorkerPool(
             BlockingQueue<Job> jobQueue,
-            JobProcessor processor,
+            JobProcessorRegistry processor,
             DeadLetterQueue dlq,
             ScheduledExecutorService retryScheduler,
             JobWorkerSupport support,

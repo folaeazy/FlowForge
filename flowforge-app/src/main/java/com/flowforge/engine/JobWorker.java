@@ -30,10 +30,9 @@ public class JobWorker implements Runnable{
 
     private volatile boolean running = true;
 
-    public JobWorker(String workerId, BlockingQueue<Job> queue, RetryPolicy retryPolicy, DeadLetterQueue deadLetterQueue, ScheduledExecutorService retryScheduler, JobWorkerSupport support, JobProcessorRegistry processorRegistry) {
+    public JobWorker(String workerId, BlockingQueue<Job> queue, JobProcessorRegistry processorRegistry, RetryPolicy retryPolicy, DeadLetterQueue deadLetterQueue, ScheduledExecutorService retryScheduler, JobWorkerSupport support) {
         this.workerId = workerId;
         this.queue = queue;
-        //this.processor = processor;
         this.retryPolicy = retryPolicy;
         this.deadLetterQueue = deadLetterQueue;
         this.retryScheduler = retryScheduler;

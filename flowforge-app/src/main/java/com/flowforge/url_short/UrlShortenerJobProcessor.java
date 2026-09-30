@@ -31,6 +31,16 @@ public class UrlShortenerJobProcessor implements JobProcessor {
     public UrlShortenerJobProcessor(ShortUrlStore shortUrlStore) {
         this.shortUrlStore = shortUrlStore;
     }
+//
+//    public static void main(String[] args) {
+//        UrlShortenerJobProcessor processor = new UrlShortenerJobProcessor(null);
+//        String longUrl = "https://example.com/page';DROP=TABLE;--";
+//        System.out.println(processor.isValidUrl(longUrl));
+//        System.out.println(processor.SHA256Hash(longUrl));
+//
+//        System.out.println(processor.base62Encode(processor.sha256Bytes(longUrl), SHORT_CODE_LENGTH));
+//
+//    }
 
 
 
