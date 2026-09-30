@@ -16,6 +16,21 @@ spring:
           max-idle: 8
           min-idle: 2
           max-wait: 1000ms
+  datasource:
+    url: jdbc:postgresql://ep-sparkling-frog-b4qfxiws-pooler.c-6.us-east-2.aws.neon.tech/neondb?user=neondb_owner&password=npg_HPSXz5gnYOu9&sslmode=require&channelBinding=require #jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/flowforge
+    username: neondb_owner # ${POSTGRES_USER:flowforge}
+    password: npg_HPSXz5gnYOu9  # ${POSTGRES_PASSWORD:flowforge}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    flyway:
+      enabled: true
+      locations: classpath:db/migrations
 
 server:
   port: ${SERVER_PORT:8080}
@@ -43,3 +58,5 @@ spring:
   data:
     redis:
       host: redis
+  datasource:
+    url: jdbc:postgresql://postgres:5432/flowforge
