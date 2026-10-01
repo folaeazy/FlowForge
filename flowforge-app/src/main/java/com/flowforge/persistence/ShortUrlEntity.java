@@ -19,7 +19,7 @@ public class ShortUrlEntity {
     @Column(name = "long_url", nullable = false, columnDefinition = "TEXT")
     private String longUrl;
 
-    @Column(name = "long_url_hash", nullable = false, unique = true, length = 64)
+    @Column(name = "long_url_hash", nullable = false, unique = true, columnDefinition = "CHAR(64)")
     private String longUrlHash;
 
     @Column(name = "tenant_id", nullable = false)
@@ -27,6 +27,10 @@ public class ShortUrlEntity {
 
     @Column(name = "job_id", nullable = false)
     private String jobId;
+
+    @Column(name = "hit_count", nullable = false)
+    private long hitCount = 0;
+
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -50,5 +54,7 @@ public class ShortUrlEntity {
     public String getTenantId() { return tenantId; }
     public String getJobId() { return jobId; }
     public Instant getCreatedAt() { return createdAt; }
+
+    public long getHitCount() { return hitCount; }
 }
 
