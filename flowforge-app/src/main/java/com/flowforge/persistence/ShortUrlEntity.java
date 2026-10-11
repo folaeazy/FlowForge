@@ -2,7 +2,10 @@ package com.flowforge.persistence;
 
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.annotations.JdbcTypeCode;
 
+import java.sql.Types;
 import java.time.Instant;
 
 @Entity
@@ -20,6 +23,7 @@ public class ShortUrlEntity {
     private String longUrl;
 
     @Column(name = "long_url_hash", nullable = false, unique = true, columnDefinition = "CHAR(64)")
+    @JdbcTypeCode(Types.CHAR)
     private String longUrlHash;
 
     @Column(name = "tenant_id", nullable = false)
