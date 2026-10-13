@@ -60,7 +60,10 @@ public class JpaShortUrlStore implements ShortUrlStore {
                 .stream().map(this::toDomain).toList();
     }
 
-
+    @Override
+    public void incrementHitCount(String shortCode) {
+        repository.incrementHitCount(shortCode);
+    }
 
 
     /**
@@ -78,6 +81,6 @@ public class JpaShortUrlStore implements ShortUrlStore {
 
     private ShortUrl toDomain(ShortUrlEntity e) {
         return new ShortUrl(e.getId(), e.getShortCode(), e.getLongUrl(), e.getLongUrlHash(),
-                e.getTenantId(), e.getJobId(), e.getCreatedAt());
+                e.getTenantId(), e.getJobId(),e.getHitCount(), e.getCreatedAt());
     }
 }

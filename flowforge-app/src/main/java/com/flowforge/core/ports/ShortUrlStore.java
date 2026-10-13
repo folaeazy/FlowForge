@@ -23,4 +23,6 @@ public interface ShortUrlStore {
 
     /** Paginated, newest first — backs the dashboard's Jobs/Recent URLs view. */
     List<ShortUrl> findRecentByTenant(String tenantId, int page, int size);
+
+    void incrementHitCount(String shortCode);
 }

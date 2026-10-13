@@ -9,6 +9,7 @@ public record ShortUrl (
         String longUrlHash,
         String tenantId,
         String jobId,
+        long hitCount,
         Instant createdAt
 
 ){
