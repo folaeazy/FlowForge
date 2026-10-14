@@ -66,8 +66,10 @@ public class ScenarioRunner {
         int totalRequests = 0;
         int totalFailures = 0;
         int totalRateLimited = 0;
+        int queueFull = 0;
 
         while (Instant.now().isBefore(end)) {
+            long tickStart = System.nanoTime();
             Duration elapsed = Duration.between(start, Instant.now());
             double targetRate = profile.targetRateAt(elapsed);
 
@@ -94,6 +96,7 @@ public class ScenarioRunner {
                     switch (result) {
                         case ACCEPTED -> totalRequests++;
                         case RATE_LIMITED -> totalRateLimited++;
+                        case QUEUE_FULL   -> queueFull++;
                         case ERROR -> totalFailures++;
                     }
                 } catch (Exception e) {
@@ -102,8 +105,9 @@ public class ScenarioRunner {
                 }
             }
             // Sleep for roughly 1 second to pace the requests
+            long spentMs = (System.nanoTime() - tickStart) / 1_000_000;
             try {
-                Thread.sleep(1000);
+                Thread.sleep(Math.max(0, 1000 - spentMs));
             } catch (InterruptedException e) {
                 log.warn("Simulation interrupted", e);
                 Thread.currentThread().interrupt();
@@ -111,6 +115,6 @@ public class ScenarioRunner {
             }
         }
 
-        return SimulationReport.print(totalRequests, totalFailures, totalRateLimited);
+        return SimulationReport.print(totalRequests, totalFailures, totalRateLimited, queueFull);
     }
 }

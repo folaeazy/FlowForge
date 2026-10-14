@@ -27,7 +27,7 @@ public class RedirectController {
         this.redisTemplate = redisTemplate;
     }
 
-    @GetMapping("/{shortCode}")
+    @GetMapping("/{shortCode:[0-9A-Za-z]{7}}")
     public ResponseEntity<Void> redirect(@PathVariable String shortCode) {
         String cacheKey = CACHE_PREFIX + shortCode;
         String longUrl = redisTemplate.opsForValue().get(cacheKey);

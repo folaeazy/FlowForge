@@ -40,7 +40,7 @@ public record SimulationReport(
     /**
      * Prints a summary of the simulation run.
      */
-    public static SimulationReport print(int totalRequests, int totalFailures, int totalRateLimited) {
+    public static SimulationReport print(int totalRequests, int totalFailures, int totalRateLimited, int queueFull) {
         int totalAttempts = totalRequests + totalFailures;
         double successRate = totalAttempts > 0
                 ? (totalRequests / (double) totalAttempts) * 100
@@ -50,6 +50,7 @@ public record SimulationReport(
         log.info("Total requests submitted: {}", totalRequests);
         log.info("Total failures: {}", totalFailures);
         log.info("Total rate limited: {}", totalRateLimited);
+        log.info("Total queue full: {}", queueFull);
         log.info("Total attempts: {}", totalAttempts);
         log.info("Success rate: {:.2f}%", successRate);
         return new SimulationReport("x",Duration.ZERO,0,0,0,0,0,0);
