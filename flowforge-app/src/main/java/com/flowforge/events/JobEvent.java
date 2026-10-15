@@ -34,4 +34,7 @@ public sealed interface JobEvent {
     record JobDead(
             String jobId, String tenantId, String reason, Instant timestamp
     ) implements JobEvent {}
+    record JobQueued(
+            String jobId, String tenantId, Instant timestamp
+    ) implements JobEvent {}
 }

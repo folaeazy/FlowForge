@@ -77,6 +77,14 @@ public class ActivityFeedEventListener {
                     e.jobId(),
                     e.reason()
             );
+
+            case JobEvent.JobQueued e -> new ActivityFeedDto(
+                    e.timestamp(),
+                    "QUEUED",
+                    "System",
+                    e.jobId(),
+                    "Waiting for a worker"
+            );
         };
     }
 }

@@ -11,6 +11,7 @@ import org.springframework.http.*;
 import org.springframework.http.client.BufferingClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -90,14 +91,19 @@ public class FlowForgeApiClient {
 
             if (response.getStatusCode() == HttpStatus.ACCEPTED) {
                 return SubmitResult.ACCEPTED;
-            } else if (response.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
-                return SubmitResult.RATE_LIMITED;
-            } else if (response.getStatusCode() == HttpStatus.SERVICE_UNAVAILABLE) {
-                return SubmitResult.QUEUE_FULL;
-            } else {
-                log.warn("Unexpected status: {}", response.getStatusCode());
-                return SubmitResult.ERROR;
             }
+            log.warn("Unexpected status {} for ip={}", response.getStatusCode(), request.identity().ip());
+            return SubmitResult.ERROR;
+
+        } catch (HttpStatusCodeException e) {
+            return switch (e.getStatusCode().value()) {
+                case 429 -> SubmitResult.RATE_LIMITED;
+                case 503 -> SubmitResult.QUEUE_FULL;
+                default -> {
+                    log.warn("Unexpected status {} for ip={}", e.getStatusCode(), request.identity().ip());
+                    yield SubmitResult.ERROR;
+                }
+            };
         } catch (RestClientException e) {
             log.error("Failed to submit job: {}", e.getMessage()); //TODO : watch
             return SubmitResult.ERROR;

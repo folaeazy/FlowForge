@@ -72,7 +72,7 @@ public class UrlShortenerJobProcessor implements JobProcessor {
 
             ShortUrl toSave =  new ShortUrl(
                     null, shortCode, longUrl,
-                    longUrlHash, job.getTenantId(), job.getJobId(), Instant.now()
+                    longUrlHash, job.getTenantId(), job.getJobId(),0, Instant.now()
             );
             try {
                 ShortUrl saved = shortUrlStore.save(toSave);

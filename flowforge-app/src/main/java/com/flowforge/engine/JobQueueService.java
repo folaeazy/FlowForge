@@ -4,11 +4,14 @@ import com.flowforge.core.domain.Job;
 import com.flowforge.core.domain.RateLimitResult;
 import com.flowforge.core.ports.MetricsStore;
 import com.flowforge.core.ports.RateLimiter;
+import com.flowforge.events.JobEvent;
+import com.flowforge.events.JobEventsPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import rate.limiter.TenantRateLimiterService;
 
+import java.time.Instant;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 
@@ -21,6 +24,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 @Service
 public class JobQueueService {
     private static final Logger log = LoggerFactory.getLogger(JobQueueService.class);
+    private final JobEventsPublisher eventsPublisher;
 
     public enum SubmitResult { ACCEPTED, QUEUE_FULL }
 
@@ -28,13 +32,15 @@ public class JobQueueService {
     private final RateLimiter rateLimiter;
     private final MetricsStore metricsStore;
 
-    public JobQueueService(BlockingQueue<Job> jobQueue, RateLimiter rateLimiter, MetricsStore metricsStore) {
+    public JobQueueService(JobEventsPublisher eventsPublisher, BlockingQueue<Job> jobQueue, RateLimiter rateLimiter, MetricsStore metricsStore) {
+        this.eventsPublisher = eventsPublisher;
         this.jobQueue = jobQueue;
         this.rateLimiter = rateLimiter;
         this.metricsStore = metricsStore;
     }
 
     public SubmitResult submit(Job job) {
+        Instant queuedAt = Instant.now();
         boolean enqueued = jobQueue.offer(job);
         metricsStore.recordQueueSize(jobQueue.size());
 
@@ -43,6 +49,7 @@ public class JobQueueService {
             return SubmitResult.QUEUE_FULL;
         }
 
+        eventsPublisher.publish(new JobEvent.JobQueued(job.getJobId(), job.getTenantId(), queuedAt));
         log.info("[Submit] Accepted jobId={} tenant={}", job.getJobId(), job.getTenantId());
         return SubmitResult.ACCEPTED;
     }
