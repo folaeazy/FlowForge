@@ -18,6 +18,8 @@ import java.io.IOException;
 @Component
 public class RateLimiterFilter implements Filter {
     private final RateLimiter rateLimiter;
+    /** Request attribute the controller reads to know who made the request. */
+    public static final String CLIENT_IDENTITY_ATTR = "flowforge.clientIdentity";
 
     public RateLimiterFilter(RateLimiter rateLimiter) {
         this.rateLimiter = rateLimiter;
@@ -34,16 +36,12 @@ public class RateLimiterFilter implements Filter {
             return;
         }
 
-        // Extract tenantId from request header
-        String tenantId = httpRequest.getHeader("X-Tenant-Id");
+        String identity = resolveClientIdentity(httpRequest);
+        httpRequest.setAttribute(CLIENT_IDENTITY_ATTR, identity);
 
-        // If no header, try to extract from request body or use default
-        if (tenantId == null || tenantId.isBlank()) {
-            tenantId = "default";
-        }
 
         // Check rate limit (this is the gateway check)
-         RateLimitResult result = rateLimiter.tryAcquire(tenantId);
+         RateLimitResult result = rateLimiter.tryAcquire(identity);
 
         if (!result.allowed()) {
             // Rate limited — return 429 immediately, never reach controller
@@ -55,6 +53,21 @@ public class RateLimiterFilter implements Filter {
 
     }
 
+
+    /**
+     * First X-Forwarded-For value if present (the simulation plays the role of
+     * a proxy), otherwise the socket's remote address.
+     */
+    private String resolveClientIdentity(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            String first = forwarded.split(",")[0].trim();
+            if (!first.isEmpty()) {
+                return first;
+            }
+        }
+        return request.getRemoteAddr();
+    }
 
     private boolean isSubmissionPath(HttpServletRequest request) {
         return "POST".equalsIgnoreCase(request.getMethod())

@@ -58,35 +58,23 @@ public class FlowForgeApiClient {
      * @return SubmitResult indicating what happened: ACCEPTED, RATE_LIMITED, or QUEUE_FULL
      */
     public SubmitResult submitJob(SimulationRequest request)  {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("X-Forwarded-For", request.identity().ip());   // the gateway reads identity from here
+
+        Map<String, Object> body = Map.of(
+                "type", "URL_SHORTEN",
+                "payload", Map.of("longUrl" , request.longUrl())
+        );
 
         try {
-            String ip = request.identity().ip();
-            String longUrl = request.longUrl();
 
-            // Job Payload
-            Map<String, Object> jobPayload = new HashMap<>();
-            jobPayload.put("longUrl", longUrl);
+            log.debug("Submitting job: ip={}, longUrl={}", request.identity().ip(), request.longUrl());
 
-            Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("tenantId", ip);  // IP is used as tenantId for rate limiting
-            requestBody.put("type", "URL_SHORTEN");
-            requestBody.put("payload", jobPayload);
-
-            // HTTP Header
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-Tenant-Id", ip);  // Rate limiter intercepts this
-            headers.setContentType(MediaType.APPLICATION_JSON);
-
-            // Serialize to JSON
-            String body = objectMapper.writeValueAsString(requestBody);
-            HttpEntity<String> httpRequest = new HttpEntity<>(body, headers);
-
-            log.debug("Submitting job: ip={}, longUrl={}", ip, longUrl);
-
-            ResponseEntity<Map> response = restTemplate.postForEntity(
+            ResponseEntity<Void> response = restTemplate.postForEntity(
                     baseUrl + "/api/jobs",
-                    httpRequest,
-                    Map.class
+                    new HttpEntity<>(body, headers),
+                    Void.class
             );
 
             if (response.getStatusCode() == HttpStatus.ACCEPTED) {
@@ -106,9 +94,6 @@ public class FlowForgeApiClient {
             };
         } catch (RestClientException e) {
             log.error("Failed to submit job: {}", e.getMessage()); //TODO : watch
-            return SubmitResult.ERROR;
-        } catch (JsonProcessingException e) {
-            log.error("Failed to serialize request body", e);
             return SubmitResult.ERROR;
         } catch (Exception e) {
             log.error("Unexpected error submitting job", e);

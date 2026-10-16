@@ -4,6 +4,8 @@ import com.flowforge.api.dto.CreateJobRequest;
 import com.flowforge.api.dto.JobSubmitResponse;
 import com.flowforge.core.domain.Job;
 import com.flowforge.engine.JobQueueService;
+import com.flowforge.filter.RateLimiterFilter;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,9 +29,12 @@ public class JobController {
     }
 
     @PostMapping
-    public ResponseEntity<JobSubmitResponse> submit(@Valid @RequestBody CreateJobRequest request) {
+    public ResponseEntity<JobSubmitResponse> submit(@Valid @RequestBody CreateJobRequest request,
+                                                    HttpServletRequest httpRequest) {
+        Object attr = httpRequest.getAttribute(RateLimiterFilter.CLIENT_IDENTITY_ATTR);
+        String identity = attr != null ? attr.toString() : httpRequest.getRemoteAddr();
         Job job = Job.builder()
-                .tenantId(request.tenantId())
+                .tenantId(identity)
                 .type(request.type())
                 .payload(request.payload())
                 .build();
