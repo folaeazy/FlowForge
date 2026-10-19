@@ -299,9 +299,22 @@
             <!-- Section 3: Rate Limits and DLQ Table -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-lg">
                 <div class="glass-card rounded-xl p-lg">
-                    <h3 class="font-headline-sm text-headline-sm mb-lg">Tenant Rate Limit Usage</h3>
-                    <div class="space-y-md" id="rate-limits-container">
-                        <div class="text-on-surface-variant text-body-sm">Loading rate limits...</div>
+                    <h3 class="font-headline-sm text-headline-sm mb-lg">Rate Limiter (Gateway)</h3>
+                    <div class="space-y-md">
+                        <div>
+                            <div class="flex justify-between font-mono-label text-mono-label uppercase mb-xs">
+                                <span>Admitted <span id="gw-admitted">0</span></span>
+                                <span class="text-error">Throttled <span id="gw-throttled">0</span> (<span id="gw-throttled-pct">0</span>%)</span>
+                            </div>
+                            <div class="h-2 w-full bg-surface-variant rounded-full overflow-hidden flex">
+                                <div id="gw-bar-admitted" class="h-full bg-secondary transition-all duration-300" style="width: 100%"></div>
+                                <div id="gw-bar-throttled" class="h-full bg-error transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="font-mono-label text-mono-label uppercase text-on-surface-variant mb-sm">Most throttled identities</div>
+                            <div id="gw-top-throttled" class="space-y-xs font-mono-label text-mono-label"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="glass-card rounded-xl flex flex-col">
@@ -313,7 +326,7 @@
                             <thead class="bg-surface-container-high border-b border-outline-variant/30 text-on-surface-variant uppercase">
                             <tr>
                                 <th class="px-md py-sm">Job ID</th>
-                                <th class="px-md py-sm">Tenant</th>
+                                <th class="px-md py-sm">Identity</th>
                                 <th class="px-md py-sm">Retries</th>
                                 <th class="px-md py-sm">Status</th>
                                 <th class="px-md py-sm text-right">Action</th>
@@ -347,7 +360,7 @@
                         <tr>
                             <th class="px-md py-sm">Short Code</th>
                             <th class="px-md py-sm">Long URL</th>
-                            <th class="px-md py-sm">Tenant</th>
+                            <th class="px-md py-sm">Identity</th>
                             <th class="px-md py-sm">Created</th>
                             <th class="px-md py-sm">Hits</th>
                             <th class="px-md py-sm text-right">Action</th>
@@ -384,7 +397,7 @@
 </nav>
 <script>
     const API_BASE = 'http://localhost:8080';
-    const TENANT_ID = 'tenant-A';
+
     let activityFeedWs = null;
     let currentUrlsPage = 0;
     const URLS_PAGE_SIZE = 20;
@@ -393,6 +406,7 @@
     document.addEventListener('DOMContentLoaded', async () => {
         initializeActivityFeed();
         await loadMetrics();
+        await loadGateway();
         await loadThroughput();
         await loadRateLimits();
         await loadDLQ();
@@ -401,6 +415,7 @@
         setInterval(loadThroughput, 10000);
         setInterval(loadRateLimits, 8000);
         setInterval(loadDLQ, 8000);
+        setInterval(loadGateway, 5000)
 
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
@@ -442,18 +457,41 @@
         }
     }
 
+    const FEED_CHANNEL = 'all';
     // === METRICS ===
     async function loadMetrics() {
         try {
             const response = await fetch(`${API_BASE}/api/metrics`);
             const data = await response.json();
 
-            document.getElementById('metric-processed').textContent = formatNumber(data.processed);
-            document.getElementById('metric-failed').textContent = formatNumber(data.failed);
-            document.getElementById('metric-retried').textContent = formatNumber(data.retried);
-            document.getElementById('metric-queue').textContent = formatNumber(data.queueSize);
+            document.getElementById('metric-processed').textContent = formatNumber(m.processed);
+            document.getElementById('metric-failed').textContent = formatNumber(m.failed);
+            document.getElementById('metric-failed-pct').textContent = `${formatNumber(m.dead)} dead-lettered`;
+            document.getElementById('metric-retried').textContent = formatNumber(m.retried);
+            document.getElementById('metric-queue').textContent = formatNumber(m.queueSize);
+            document.getElementById('metric-workers').textContent = m.activeWorkers;
         } catch (error) {
             console.error('Failed to load metrics:', error);
+        }
+    }
+
+    async function loadGateway() {
+        try {
+            const response = await fetch(`${API_BASE}/api/metrics/gateway?limit=5`);
+            const g = await response.json();
+
+            document.getElementById('gw-admitted').textContent = formatNumber(g.admitted);
+            document.getElementById('gw-throttled').textContent = formatNumber(g.rateLimited);
+            document.getElementById('gw-throttled-pct').textContent = g.rateLimitedPercent.toFixed(1);
+            document.getElementById('gw-bar-admitted').style.width = `${100 - g.rateLimitedPercent}%`;
+            document.getElementById('gw-bar-throttled').style.width = `${g.rateLimitedPercent}%`;
+            document.getElementById('gw-top-throttled').innerHTML = g.topThrottled.length === 0
+                ? '<div class="text-on-surface-variant">None yet</div>'
+                : g.topThrottled.map(r =>
+                    `<div class="flex justify-between"><span>${r.identity}</span><span class="text-error">${r.rejections}</span></div>`
+                ).join('');
+        } catch (error) {
+            console.error('Failed to load gateway stats:', error);
         }
     }
 
@@ -623,7 +661,7 @@
     // === ACTIVITY FEED (WebSocket) ===
     function initializeActivityFeed() {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//localhost:8080/ws/activity-feed/${TENANT_ID}`;
+        const wsUrl = `${protocol}//localhost:8080/ws/activity-feed/${FEED_CHANNEL}`;
         activityFeedWs = new WebSocket(wsUrl);
 
         activityFeedWs.onopen = () => {
@@ -668,6 +706,7 @@
             case 'RETRY': return 'text-tertiary';
             case 'DEAD': return 'text-error';
             case 'SKIPPED': return 'text-on-surface-variant';
+            case 'QUEUED': return 'text-on-surface-variant';
             default: return 'text-on-surface-variant';
         }
     }

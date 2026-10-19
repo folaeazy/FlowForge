@@ -1,0 +1,1 @@
+CREATE INDEX idx_short_urls_created ON short_urls (created_at DESC);

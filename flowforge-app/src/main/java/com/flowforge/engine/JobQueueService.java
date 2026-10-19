@@ -29,20 +29,16 @@ public class JobQueueService {
     public enum SubmitResult { ACCEPTED, QUEUE_FULL }
 
     private final BlockingQueue<Job> jobQueue;
-    private final RateLimiter rateLimiter;
-    private final MetricsStore metricsStore;
 
-    public JobQueueService(JobEventsPublisher eventsPublisher, BlockingQueue<Job> jobQueue, RateLimiter rateLimiter, MetricsStore metricsStore) {
+    public JobQueueService(JobEventsPublisher eventsPublisher, BlockingQueue<Job> jobQueue) {
         this.eventsPublisher = eventsPublisher;
         this.jobQueue = jobQueue;
-        this.rateLimiter = rateLimiter;
-        this.metricsStore = metricsStore;
+
     }
 
     public SubmitResult submit(Job job) {
         Instant queuedAt = Instant.now();
         boolean enqueued = jobQueue.offer(job);
-        metricsStore.recordQueueSize(jobQueue.size());
 
         if (!enqueued) {
             log.warn("[Submit] Queue full — rejected jobId={}", job.getJobId());

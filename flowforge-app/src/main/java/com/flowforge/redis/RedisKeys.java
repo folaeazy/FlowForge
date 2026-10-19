@@ -17,6 +17,8 @@ public final class RedisKeys {
 
     private static final String PREFIX = "flowforge:";
     private static final DateTimeFormatter MINUTE_BUCKET = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
+    public static final String GLOBAL_STATS = "flowforge:stats:global";
+    public static final String THROTTLED_IDENTITIES = "flowforge:stats:throttled";
 
     //--------Rate limiter ----------//
 

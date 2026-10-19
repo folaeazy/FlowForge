@@ -21,13 +21,16 @@ public class UrlController {
 
     @GetMapping
     public List<ShortUrlResponse> list(
-            @RequestParam String tenantId,
+            @RequestParam(required = false) String tenantId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return shortUrlStore.findRecentByTenant(tenantId, page, size)
-                .stream()
-                .map(ShortUrlResponse::from)
-                .toList();
+
+        int safePage = Math.max(0, page);
+        int safeSize = Math.max(1, Math.min(size, 100));
+        List<ShortUrl> rows = (tenantId == null || tenantId.isBlank())
+                ? shortUrlStore.findRecent(safePage, safeSize)
+                : shortUrlStore.findRecentByTenant(tenantId, safePage, safeSize);
+        return rows.stream().map(ShortUrlResponse::from).toList();
     }
 
     public record ShortUrlResponse(String shortCode, String longUrl, String tenantId, Instant createdAt, long hitCount) {

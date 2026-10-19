@@ -1,6 +1,7 @@
 package com.flowforge.filter;
 
 import com.flowforge.core.domain.RateLimitResult;
+import com.flowforge.core.ports.GlobalStats;
 import com.flowforge.core.ports.RateLimiter;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,11 +19,13 @@ import java.io.IOException;
 @Component
 public class RateLimiterFilter implements Filter {
     private final RateLimiter rateLimiter;
+    private final GlobalStats stats;
     /** Request attribute the controller reads to know who made the request. */
     public static final String CLIENT_IDENTITY_ATTR = "flowforge.clientIdentity";
 
-    public RateLimiterFilter(RateLimiter rateLimiter) {
+    public RateLimiterFilter(RateLimiter rateLimiter, GlobalStats stats) {
         this.rateLimiter = rateLimiter;
+        this.stats = stats;
     }
 
     @Override
@@ -44,11 +47,14 @@ public class RateLimiterFilter implements Filter {
          RateLimitResult result = rateLimiter.tryAcquire(identity);
 
         if (!result.allowed()) {
+            //record stat
+            stats.incrementRateLimited(identity);
             // Rate limited — return 429 immediately, never reach controller
             httpResponse.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             httpResponse.getWriter().write("Rate limit exceeded..");
             return;
         }
+        stats.incrementAdmitted();
         filterChain.doFilter(servletRequest, servletResponse);
 
     }

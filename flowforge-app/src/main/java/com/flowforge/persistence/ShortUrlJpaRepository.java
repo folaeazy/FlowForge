@@ -16,7 +16,7 @@ public interface ShortUrlJpaRepository extends JpaRepository<ShortUrlEntity, Lon
     Optional<ShortUrl> findByLongUrlHash(String longUrlHash);
     Optional<ShortUrl> findByShortCode(String shortCode);
     List<ShortUrlEntity> findByTenantIdOrderByCreatedAtDesc(String tenantId, Pageable pageable);
-
+    List<ShortUrlEntity> findAllByOrderByCreatedAtDesc(Pageable pageable);
     // in ShortUrlJpaRepository
     @Modifying
     @Query("UPDATE ShortUrlEntity e SET e.hitCount = e.hitCount + 1 WHERE e.shortCode = :shortCode")

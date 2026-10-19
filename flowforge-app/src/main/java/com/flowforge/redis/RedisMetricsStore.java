@@ -37,48 +37,8 @@ public class RedisMetricsStore implements MetricsStore {
         this.redisTemplate = redisTemplate;
     }
 
-    @Override
-    public void incrementProcessed(String tenantId) {
-        safeIncrement(RedisKeys.METRICS_PROCESSED, tenantId);
-        incrementTpsBucket("success");
 
-    }
 
-    @Override
-    public void incrementFailed(String tenantId) {
-        safeIncrement(RedisKeys.METRICS_FAILED ,tenantId);
-        incrementTpsBucket("failed");
-    }
-
-    @Override
-    public void incrementRetried(String tenantId) {
-        safeIncrement(RedisKeys.METRICS_RETRIES , tenantId);
-    }
-
-    @Override
-    public void recordQueueSize(int size) {
-        try {
-            redisTemplate.opsForValue().set(RedisKeys.QUEUE_SIZE, String.valueOf(size));
-        } catch (Exception e) {
-            log.error("Failed to record queue size", e);
-        }
-
-    }
-
-    @Override
-    public long getProcessed(String tenantId) {
-        return safeRead(RedisKeys.METRICS_PROCESSED, tenantId);
-    }
-
-    @Override
-    public long getFailed(String tenantId) {
-        return safeRead(RedisKeys.METRICS_FAILED, tenantId);
-    }
-
-    @Override
-    public long getRetried(String tenantId) {
-        return safeRead(RedisKeys.METRICS_RETRIES, tenantId);
-    }
 
     @Override
     public long getQueueSize() {

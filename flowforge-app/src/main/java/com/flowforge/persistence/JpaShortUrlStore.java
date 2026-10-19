@@ -61,6 +61,12 @@ public class JpaShortUrlStore implements ShortUrlStore {
     }
 
     @Override
+    public List<ShortUrl> findRecent(int page, int size) {
+        return repository.findAllByOrderByCreatedAtDesc(PageRequest.of(page,size))
+                .stream().map(this::toDomain).toList();
+    }
+
+    @Override
     public void incrementHitCount(String shortCode) {
         repository.incrementHitCount(shortCode);
     }

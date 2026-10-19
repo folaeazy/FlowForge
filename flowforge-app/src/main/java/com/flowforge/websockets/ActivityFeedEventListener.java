@@ -16,15 +16,18 @@ import org.springframework.stereotype.Component;
 public class ActivityFeedEventListener {
 
     private final ActivityFeedBroadcaster broadcaster;
+    private final GlobalFeedPublisher globalFeed;
 
-    public ActivityFeedEventListener(ActivityFeedBroadcaster broadcaster) {
+    public ActivityFeedEventListener(ActivityFeedBroadcaster broadcaster, GlobalFeedPublisher globalFeed) {
         this.broadcaster = broadcaster;
+        this.globalFeed = globalFeed;
     }
 
     @EventListener(JobEvent.class)
     public void onJobEvent(JobEvent event) {
         ActivityFeedDto dto = toDto(event);
         broadcaster.broadcast(event.tenantId(), dto);
+        globalFeed.publish(dto);
     }
 
 

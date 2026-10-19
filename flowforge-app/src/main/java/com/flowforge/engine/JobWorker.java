@@ -97,8 +97,6 @@ public class JobWorker implements Runnable{
             if(result.success()) {
                 // Mark processed ONLY after success.
                 support.idempotencyStore().markProcessed(JobInProgress.getJobId(), 86_400);
-                support.metricsStore().incrementProcessed(JobInProgress.getTenantId());
-
                 log.info("[{}] Completed", workerId);
                 support.eventsPublisher().publish(new JobEvent.JobCompleted(
                         JobInProgress.getJobId(), JobInProgress.getTenantId(), workerId, Instant.now()
@@ -118,7 +116,6 @@ public class JobWorker implements Runnable{
 
     private void handleFailure(Job job, Exception cause) {
         log.warn("[{}] Failed: {}", workerId, cause.getMessage());
-        support.metricsStore().incrementFailed(job.getTenantId()); //update metrics
 
         support.eventsPublisher().publish(new JobEvent.JobFailed(
                 job.getJobId(), job.getTenantId(), workerId, cause.getMessage(), job.getAttemptCount(), Instant.now()
@@ -127,7 +124,6 @@ public class JobWorker implements Runnable{
         if(job.hasRetriesLeft()){
             Job failed = job.markFailed();
             long delayMs = retryPolicy.delayMs(job.getAttemptCount());
-            support.metricsStore().incrementRetried(job.getTenantId());
             support.eventsPublisher().publish(new JobEvent.JobRetryScheduled(
                     job.getJobId(), job.getTenantId(), delayMs, job.getAttemptCount() + 1, Instant.now()
             ));
