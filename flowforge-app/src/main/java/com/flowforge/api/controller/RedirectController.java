@@ -1,5 +1,6 @@
 package com.flowforge.api.controller;
 
+import com.flowforge.components.HitCounter;
 import com.flowforge.core.domain.ShortUrl;
 import com.flowforge.core.ports.ShortUrlStore;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -21,18 +22,21 @@ public class RedirectController {
 
     private final ShortUrlStore shortUrlStore;
     private final StringRedisTemplate redisTemplate;
+    private final HitCounter hitCounter;
 
-    public RedirectController(ShortUrlStore shortUrlStore, StringRedisTemplate redisTemplate) {
+    public RedirectController(ShortUrlStore shortUrlStore, StringRedisTemplate redisTemplate, HitCounter hitCounter) {
         this.shortUrlStore = shortUrlStore;
         this.redisTemplate = redisTemplate;
+        this.hitCounter = hitCounter;
     }
 
     @GetMapping("/{shortCode:[0-9A-Za-z]{7}}")
     public ResponseEntity<Void> redirect(@PathVariable String shortCode) {
         String cacheKey = CACHE_PREFIX + shortCode;
         String longUrl = redisTemplate.opsForValue().get(cacheKey);
+        boolean cacheHit = longUrl != null;
 
-        if(longUrl == null) {
+        if(!cacheHit) {
             Optional<ShortUrl> found = shortUrlStore.findByShortCode(shortCode);
             if(found.isEmpty()) {
                 return ResponseEntity.notFound().build();
@@ -41,8 +45,9 @@ public class RedirectController {
             // Add to cache
             redisTemplate.opsForValue().set(cacheKey, longUrl, CACHE_TTL);
         }
-        shortUrlStore.incrementHitCount(shortCode);
+        hitCounter.record(shortCode);
         return ResponseEntity.status(HttpStatus.FOUND)
+                .header("X-Cache", cacheHit ? "HIT" : "MISS")
                 .location(URI.create(longUrl))
                 .build();
     }

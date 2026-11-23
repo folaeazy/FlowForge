@@ -1,4 +1,4 @@
-package com.flowforge.url_short;
+package com.flowforge.components;
 
 import com.flowforge.core.domain.Job;
 import com.flowforge.core.domain.ShortUrl;
@@ -16,7 +16,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.util.Map;
 import java.util.Optional;
 
 @Component
