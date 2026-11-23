@@ -57,30 +57,28 @@ public class UrlShortenerJobProcessor implements JobProcessor {
         }
 
         //  Generate + persist, with real collision retry
-        for(int attempt = 0; attempt <= MAX_COLLISION_RETRIES; attempt++) {
+        for(int attempt = 0; attempt < MAX_COLLISION_RETRIES; attempt++) {
             String candidateInput = attempt == 0 ? longUrl : longUrl + "#" + attempt;
             String shortCode = base62Encode(sha256Bytes(candidateInput), SHORT_CODE_LENGTH);
 
             ShortUrl toSave =  new ShortUrl(
                     null, shortCode, longUrl,
-                    longUrlHash, job.getTenantId(), job.getJobId(),0, Instant.now()
+                    longUrlHash, job.getTenantId(), job.getJobId(),0L, Instant.now()
             );
             try {
                 ShortUrl saved = shortUrlStore.save(toSave);
                 log.info("Shortened: {} -> {}", saved.shortCode(), longUrl);
+                if (job.getJobId().equals(saved.jobId())) {
+                    log.info("Shortened: {} -> {}", saved.shortCode(), longUrl);
+                } else {
+                    log.info("A concurrent job stored this URL first, adopting code {}", saved.shortCode());
+                }
                 return new Result(true, saved.shortCode(), null);
 
             }catch (DuplicateShortCodeException ex) {
-                log.debug("short_code collision on attempt {} ({}), retrying with salted hash", attempt, shortCode);
+                log.debug("short_code {} belongs to a different URL (attempt {}), retrying with salt", shortCode, attempt + 1);
                 // loop continues with a different candidateInput
             }catch (Exception e){
-                // Most likely long_url_hash race — a concurrent job for the SAME
-                // url won first. That's success for this job, not failure.
-                Optional<ShortUrl> winner = shortUrlStore.findByLongUrlHash(longUrlHash);
-                if (winner.isPresent()) {
-                    log.info("Lost idempotency race, adopting winner's code: {}", winner.get().shortCode());
-                    return new Result(true, winner.get().shortCode(), null);
-                }
                 log.error("Unexpected persistence error shortening URL", e);
                 return new Result(false, null, "Persistence error: " + e.getMessage());
             }
