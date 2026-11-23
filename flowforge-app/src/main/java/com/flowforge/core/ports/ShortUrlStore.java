@@ -21,10 +21,13 @@ public interface ShortUrlStore {
      */
     ShortUrl save(ShortUrl shortUrl);
 
-    /** Paginated, newest first — backs the dashboard's Jobs/Recent URLs view. */
+    /**
+     * Paginated, newest first — backs the dashboard's Jobs/Recent URLs view.
+     */
     List<ShortUrl> findRecentByTenant(String tenantId, int page, int size);
 
     List<ShortUrl> findRecent(int page, int size);
 
-    void incrementHitCount(String shortCode);
+    void addHits(String shortCode, long delta);
+
 }

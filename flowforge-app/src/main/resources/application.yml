@@ -4,8 +4,9 @@ logging:
   pattern:
     console: "%d{HH:mm:ss.SSS} %-5level [%thread] [tenant=%X{tenantId:-} job=%X{jobId:-} attempt=%X{attempt:-}] %logger{36} - %msg%n"
 spring:
-  thread :
-    virtual : true
+  threads :
+    virtual :
+      enabled : true
   application:
     name: flowforge
   data:

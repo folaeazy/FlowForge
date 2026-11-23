@@ -3,6 +3,7 @@ package com.flowforge.persistence;
 import com.flowforge.core.domain.ShortUrl;
 import com.flowforge.core.ports.ShortUrlStore;
 import com.flowforge.exception.DuplicateShortCodeException;
+import jakarta.transaction.Transactional;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
@@ -16,6 +17,8 @@ import java.util.Optional;
 public class JpaShortUrlStore implements ShortUrlStore {
 
     private final ShortUrlJpaRepository repository;
+
+    private static final String SHORT_CODE_INDEX = "idx_short_urls_short_code";
 
     public JpaShortUrlStore(ShortUrlJpaRepository repository) {
         this.repository = repository;
@@ -32,26 +35,26 @@ public class JpaShortUrlStore implements ShortUrlStore {
     }
 
     @Override
-    public ShortUrl save(ShortUrl shortUrl) {
-        ShortUrlEntity entity = new ShortUrlEntity(
-                shortUrl.shortCode(), shortUrl.longUrl(), shortUrl.longUrlHash(),
-                shortUrl.tenantId(), shortUrl.jobId(), shortUrl.createdAt()
-        );
+    @Transactional
+    public ShortUrl save(ShortUrl s) {
+
         try {
-            ShortUrlEntity saved = repository.save(entity);
-            repository.flush(); // force the constraint check now, not at some later flush
-            return toDomain(saved);
+            repository.insertIfUrlIsAbsent(s.shortCode(), s.longUrl(), s.longUrlHash(),
+                    s.tenantId(), s.jobId());
+
 
         } catch (DataIntegrityViolationException e) {
-            if (isConstraintViolation(e, "short_urls_short_code_key")
-                    || isConstraintViolation(e, "short_code")) {
-                throw new DuplicateShortCodeException(shortUrl.shortCode());
+            // Same-URL races are absorbed by ON CONFLICT, so the only unique index left to violate is
+            // short_code: a different URL owns this code. Match the root cause (just the PostgreSQL
+            // error), never the wrapper, whose message also contains the INSERT text.
+            String root = e.getMostSpecificCause().getMessage();
+            if (root != null && root.contains(SHORT_CODE_INDEX)) {
+                throw new DuplicateShortCodeException(s.shortCode());
             }
-            // long_url_hash collision — let it propagate. UrlShortenerJobProcessor
-            // catches this generically and re-queries findByLongUrlHash to adopt
-            // the winner's code instead of treating it as a real failure.
             throw e;
         }
+        return repository.findByLongUrlHash(s.longUrlHash())
+                .orElseThrow(()-> new IllegalStateException("Row missing right after insert"));
     }
 
     @Override
@@ -67,23 +70,10 @@ public class JpaShortUrlStore implements ShortUrlStore {
     }
 
     @Override
-    public void incrementHitCount(String shortCode) {
-        repository.incrementHitCount(shortCode);
+    public void addHits(String shortCode, long delta) {
+        repository.addHits(shortCode, delta);
     }
 
-
-    /**
-     * Checks the actual DB constraint name rather than string-matching the
-     * exception message, which is driver/version-fragile.
-     */
-    private boolean isConstraintViolation(DataIntegrityViolationException e, String needle) {
-        Throwable cause = e.getCause();
-        if (cause instanceof ConstraintViolationException cve) {
-            String constraintName = cve.getConstraintViolations().toString();
-            return constraintName != null && constraintName.toLowerCase().contains(needle.toLowerCase());
-        }
-        return e.getMessage() != null && e.getMessage().toLowerCase().contains(needle.toLowerCase());
-    }
 
     private ShortUrl toDomain(ShortUrlEntity e) {
         return new ShortUrl(e.getId(), e.getShortCode(), e.getLongUrl(), e.getLongUrlHash(),
