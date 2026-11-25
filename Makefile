@@ -83,6 +83,7 @@ build:
 	./mvnw clean package -DskipTests -q
 	@echo "FlowForge application built → flowforge-app/target/"
 	@echo "FlowForge application built → simulation-engine/target/"
+	@echo "FlowForge application built → consumer-engine/target/"
 
 ## Run Simulation engine in steady profile mode
 simulate-steady:

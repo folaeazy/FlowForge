@@ -12,140 +12,102 @@ import java.util.*;
  * - 10% burst (400 IPs, fire 10-20 requests in tight clusters)
  **/
 public class IdentityPool {
+    public enum Category { UNIQUE, RECURRING, BURST }
 
+    private static final double UNIQUE_SHARE = 0.70;
+    private static final double RECURRING_SHARE = 0.20;
+    private static final double BURST_SHARE = 0.10;
 
-    private final Queue<String> uniqueQueue;
-    private final Queue<String> recurringQueue;
-    private final Queue<String> burstQueue;
     private final Random random;
-    private final Map<String, Integer> ipFireCount;
-    private final Map<String, Identity> ipToIdentity; // tracks all identity and their category
+    private final Set<String> issued = new HashSet<>();   // no IP is ever handed out twice as a new identity
+    private final String[] recurringIps;
+    private final int[] recurringRemaining;
+    private final List<String> burstIps = new ArrayList<>();
 
-    public IdentityPool(int totalIdentities) {
-        this.uniqueQueue = new ArrayDeque<>();
-        this.recurringQueue = new ArrayDeque<>();
-        this.burstQueue = new ArrayDeque<>();
-        this.ipFireCount = new HashMap<>();
-        this.random = new Random(42);
-        this.ipToIdentity = new HashMap<>();
+    private double singleBudget = 0;
+    private double burstBudget = 0;
+    private int pendingBurstSize;
 
-        initialize(totalIdentities);
-    }
+    public IdentityPool() { this(800, 500, 42L); }
 
-
-    public int totalIdentities() {
-        return ipToIdentity.size();
+    public IdentityPool(int recurringPoolSize, int burstPoolSize, long seed) {
+        this.random = new Random(seed);
+        this.recurringIps = new String[recurringPoolSize];
+        this.recurringRemaining = new int[recurringPoolSize];
+        for (int i = 0; i < recurringPoolSize; i++) {
+            recurringIps[i] = freshIp();
+            recurringRemaining[i] = rollRecurringVisits();
+        }
+        for (int i = 0; i < burstPoolSize; i++) {
+            burstIps.add(freshIp());
+        }
+        this.pendingBurstSize = rollBurstSize();
     }
 
     /**
-     * Picks the next identity (IP) to fire a request.
+     * Identities for one tick, in firing order. Burst clusters stay contiguous so the runner
+     * sends them back-to-back. A tick that completes a burst can exceed n; the budgets carry
+     * the difference so the long-run rate and the 70/20/10 mix hold.
      */
-    public String nextIdentity(Category category) {
-        return switch (category) {
-            case UNIQUE -> uniqueQueue.poll();
-            case RECURRING -> {
-                String ip = recurringQueue.poll();
-                if(ip != null) recurringQueue.offer(ip); // cycle it back to the end
-                yield ip;
+    public List<Identity> nextBatch(int n) {
+        List<List<Identity>> blocks = new ArrayList<>();
+
+        burstBudget += n * BURST_SHARE;
+        while (burstBudget >= pendingBurstSize) {
+            String ip = burstIps.get(random.nextInt(burstIps.size()));
+            List<Identity> cluster = new ArrayList<>(pendingBurstSize);
+            for (int i = 0; i < pendingBurstSize; i++) {
+                cluster.add(new Identity(ip, Category.BURST));
             }
-            case BURST -> {
-                String ip = burstQueue.poll();
-                if(ip != null) burstQueue.offer(ip); // cycle it back to the end
-                yield ip;
-            }
-        };
-
-    }
-
-    /**
-     * Returns the next identity (IP) by randomly selecting a category.
-     * Uses weighted distribution: 70% unique, 20% recurring, 10% burst.
-     */
-    public Identity getNextIdentity() {
-        int roll = random.nextInt(100);
-
-        Category category = roll < 70 ? Category.UNIQUE
-                : roll < 90 ? Category.RECURRING
-                : Category.BURST;
-
-        String ip = nextIdentity(category);
-        if(ip != null) {
-            decrementFireCount(ip);
-            return ipToIdentity.get(ip); //Identity object
-        }
-        return null;
-    }
-
-
-    private void initialize(int total) {
-        int uniqueCount = (int) (total * 0.70) ;
-        int recurringCount = (int) (total * 0.20) ;
-        int burstCount = total - uniqueCount - recurringCount;
-
-
-        // create unique user Identities/IP
-        for(int i = 0; i < uniqueCount; i++) {
-            String ip = generateRandomIP();
-            ipToIdentity.put(ip, new Identity(ip, Category.UNIQUE));
-            uniqueQueue.offer(ip);
-            ipFireCount.put(ip, 1); //unique fires only once
+            blocks.add(cluster);
+            burstBudget -= pendingBurstSize;
+            pendingBurstSize = rollBurstSize();
         }
 
-        // create recurring user Identities/IP
-        for(int i = 0; i < recurringCount; i++) {
-            String ip = generateRandomIP();
-            ipToIdentity.put(ip, new Identity(ip, Category.RECURRING));
-            recurringQueue.offer(ip);
-            int fireCount = 5 + random.nextInt(6);  // 5-10
-            ipFireCount.put(ip, fireCount);
+        singleBudget += n * (1 - BURST_SHARE);
+        int singles = (int) singleBudget;
+        singleBudget -= singles;
+
+        double uniqueFraction = UNIQUE_SHARE / (UNIQUE_SHARE + RECURRING_SHARE);
+        for (int i = 0; i < singles; i++) {
+            Identity id = random.nextDouble() < uniqueFraction
+                    ? new Identity(freshIp(), Category.UNIQUE)
+                    : new Identity(nextRecurringIp(), Category.RECURRING);
+            blocks.add(List.of(id));
         }
 
-        // create burst user Identities/IP
-        for(int i = 0; i < burstCount; i++) {
-            String ip = generateRandomIP();
-            ipToIdentity.put(ip, new Identity(ip, Category.BURST));
-            burstQueue.offer(ip);
-            int fireCount = 10 + random.nextInt(11);  // 10-20
-            ipFireCount.put(ip, fireCount);
+        Collections.shuffle(blocks, random);
+        List<Identity> batch = new ArrayList<>();
+        blocks.forEach(batch::addAll);
+        return batch;
+    }
+
+    private String nextRecurringIp() {
+        int i = random.nextInt(recurringIps.length);
+        String ip = recurringIps[i];
+        if (--recurringRemaining[i] == 0) {          // this visitor has used up their visits
+            recurringIps[i] = freshIp();
+            recurringRemaining[i] = rollRecurringVisits();
         }
+        return ip;
     }
 
-    /**
-     * Generate Random IPV4 Address
-     */
-    private String generateRandomIP() {
-        return random.nextInt(256) + "." +
-                random.nextInt(256) + "." +
-                random.nextInt(256) + "." +
-                random.nextInt(256) ;
+    private int rollRecurringVisits() { return 5 + random.nextInt(6); }   // 5-10
+    private int rollBurstSize()       { return 10 + random.nextInt(11); } // 10-20
 
+    private String freshIp() {
+        String ip;
+        do {
+            ip = randomIp();
+        } while (!issued.add(ip));
+        return ip;
     }
 
-    public int getRemainingFires(String ip) {
-        return ipFireCount.getOrDefault(ip, 0);
+    private String randomIp() {
+        int first;
+        do {
+            first = 1 + random.nextInt(223);
+        } while (first == 10 || first == 127);
+        return first + "." + random.nextInt(256) + "." + random.nextInt(256) + "." + (1 + random.nextInt(254));
     }
-
-    // Add method to decrement fires:
-    public void decrementFireCount(String ip) {
-        ipFireCount.put(ip, ipFireCount.getOrDefault(ip, 0) - 1);
-    }
-
-    public enum Category {
-        UNIQUE,
-        RECURRING,
-        BURST
-    }
-
-    // A little test code
-//    public static void main(String[] args) throws InterruptedException{
-//        IdentityPool pool = new IdentityPool(10);
-//        System.out.println("Unique queue size " + pool.uniqueQueue.size());
-//        System.out.println("Recurring queue size " + pool.recurringQueue.size());
-//        System.out.println("Burst queue size " + pool.burstQueue.size());
-//
-//        while (!pool.recurringQueue.isEmpty()) {
-//            System.out.println(pool.nextIdentity(Category.RECURRING));
-//            Thread.sleep(100);
-//        }
-//    }
 }

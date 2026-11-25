@@ -10,7 +10,7 @@ import com.flowforge.simulation.url.URLGenerator;
 import com.flowforge.simulation.url.UrlPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import com. flowforge. simulation. client. FlowForgeApiClient. SubmitResult;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -35,86 +35,70 @@ import java.util.concurrent.atomic.AtomicInteger;
  * but that's a future optimization.
  */
 public class ScenarioRunner {
-
     private static final Logger log = LoggerFactory.getLogger(ScenarioRunner.class);
 
-    private final FlowForgeApiClient client;
     private final LoadProfile profile;
-    private final IdentityPool identityPool;
-    private final UrlPool urlPool;
-    private final URLGenerator urlGenerator;
+    private final FlowForgeApiClient apiClient;
+    private final IdentityPool identityPool = new IdentityPool();
+    private final URLGenerator urlGenerator = new URLGenerator(new UrlPool(300));
 
-    public ScenarioRunner(FlowForgeApiClient client, LoadProfile profile) {
-        this.client = client;
+    private final long[][] tally =
+            new long[IdentityPool.Category.values().length][SubmitResult.values().length];
+
+    public ScenarioRunner(LoadProfile profile, FlowForgeApiClient apiClient) {
         this.profile = profile;
-        this.identityPool = new IdentityPool(5000); // 5000 users
-        this.urlPool = new UrlPool(400); //400 urls in pool
-        this.urlGenerator = new URLGenerator(urlPool);
+        this.apiClient = apiClient;
     }
 
-    /**
-     * Run the scenario from start to finish.
-     */
-    public SimulationReport run(){
-        log.info("=== Starting Simulation: {} ===", profile.name());
-        log.info("Total identities: {}", identityPool.totalIdentities());
-        log.info("URL pool size: {}", urlPool.size());
-        log.info("Total duration: {}", profile.totalDuration());
+    public void run() {
+        log.info("=== Starting simulation: {} for {} ===", profile.name(), profile.totalDuration());
 
         Instant start = Instant.now();
         Instant end = start.plus(profile.totalDuration());
-        int totalRequests = 0;
-        int totalFailures = 0;
-        int totalRateLimited = 0;
-        int queueFull = 0;
 
         while (Instant.now().isBefore(end)) {
             long tickStart = System.nanoTime();
             Duration elapsed = Duration.between(start, Instant.now());
-            double targetRate = profile.targetRateAt(elapsed);
+            int toFire = (int) Math.ceil(profile.targetRateAt(elapsed));
 
-            int requestsThisSecond = (int) Math.ceil(targetRate);
-
-            log.debug("Elapsed: {}s, target rate: {} req/s, firing {} requests",
-                    elapsed.getSeconds(), String.format("%.2f", targetRate), requestsThisSecond);
-
-            // Submit targetRate` jobs in this second
-            for(int i = 0; i < requestsThisSecond; i++) {
-                try{
-                    // pick random identity
-                    Identity identity = identityPool.getNextIdentity();
-                    if (identity == null) {
-                        log.debug("No more identities available");
-                        continue;
-                    }
-                    // Generate Url (distribution 70/20/10)
-                    String longUrl = urlGenerator.generateUrl();
-
-                    SimulationRequest request = SimulationRequest.create(identity, longUrl);
-                    //Submit to FlowForge API
-                    FlowForgeApiClient.SubmitResult result = client.submitJob(request);
-                    switch (result) {
-                        case ACCEPTED -> totalRequests++;
-                        case RATE_LIMITED -> totalRateLimited++;
-                        case QUEUE_FULL   -> queueFull++;
-                        case ERROR -> totalFailures++;
-                    }
+            for (Identity identity : identityPool.nextBatch(toFire)) {
+                SubmitResult result;
+                try {
+                    result = apiClient.submitJob(SimulationRequest.create(identity, urlGenerator.generateUrl()));
                 } catch (Exception e) {
-                    log.error("Error submitting request", e);
-                    totalFailures++;
+                    log.error("Unexpected failure submitting request", e);
+                    result = SubmitResult.ERROR;
                 }
+                tally[identity.category().ordinal()][result.ordinal()]++;
             }
-            // Sleep for roughly 1 second to pace the requests
+
             long spentMs = (System.nanoTime() - tickStart) / 1_000_000;
+            if (spentMs > 1000) {
+                log.warn("Tick took {} ms for {} requests: the single-threaded client can't sustain this rate", spentMs, toFire);
+            }
             try {
-                Thread.sleep(Math.max(0, 1000 - spentMs));
+                Thread.sleep(Math.max(0, 1000 - spentMs));   // sleep only the rest of the second
             } catch (InterruptedException e) {
-                log.warn("Simulation interrupted", e);
                 Thread.currentThread().interrupt();
                 break;
             }
         }
+        printReport();
+    }
 
-        return SimulationReport.print(totalRequests, totalFailures, totalRateLimited, queueFull);
+    private void printReport() {
+        log.info("=== Simulation complete ===");
+        log.info(String.format("%-10s %10s %12s %10s %8s", "category", "accepted", "rateLimited", "queueFull", "errors"));
+        long[] totals = new long[SubmitResult.values().length];
+        for (IdentityPool.Category c : IdentityPool.Category.values()) {
+            long[] row = tally[c.ordinal()];
+            log.info(String.format("%-10s %10d %12d %10d %8d", c,
+                    row[SubmitResult.ACCEPTED.ordinal()], row[SubmitResult.RATE_LIMITED.ordinal()],
+                    row[FlowForgeApiClient.SubmitResult.QUEUE_FULL.ordinal()], row[FlowForgeApiClient.SubmitResult.ERROR.ordinal()]));
+            for (int i = 0; i < row.length; i++) totals[i] += row[i];
+        }
+        log.info(String.format("%-10s %10d %12d %10d %8d", "TOTAL",
+                totals[SubmitResult.ACCEPTED.ordinal()], totals[FlowForgeApiClient.SubmitResult.RATE_LIMITED.ordinal()],
+                totals[FlowForgeApiClient.SubmitResult.QUEUE_FULL.ordinal()], totals[FlowForgeApiClient.SubmitResult.ERROR.ordinal()]));
     }
 }
